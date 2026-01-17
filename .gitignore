@@ -2,3 +2,7 @@ venv/
 __pycache__/
 db.sqlite3
 *.log
+media/*.pdf
+media/avatars/*
+media/notes/*
+media/student_resources/*
