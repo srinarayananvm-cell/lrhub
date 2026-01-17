@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+  <h2 class="mb-4 text-warning">
+    <i class="bi bi-person-workspace"></i> Teacher Analytics
+  </h2>
+  <p class="text-muted">Students’ engagement with your notes and resources.</p>
+
+  <!-- Downloads -->
+  <h4><i class="bi bi-download text-info"></i> Downloads</h4>
+  <ul class="list-group mb-3">
+    {% for note in my_notes %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        Note: {{ note.title }}
+        <span class="badge bg-info">{{ note.downloads }} downloads</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No notes uploaded yet.</li>
+    {% endfor %}
+  </ul>
+ 
+
+  <!-- Ratings -->
+  <h4><i class="bi bi-star-fill text-warning"></i> Ratings</h4>
+  <ul class="list-group mb-3">
+    {% for rating in ratings %}
+      <li class="list-group-item">
+        {% if rating.note %}
+          {{ rating.user.username }} rated Note: {{ rating.note.title }} {{ rating.value }}★
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="list-group-item">No ratings yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Recommendations -->
+  <h4><i class="bi bi-hand-thumbs-up-fill text-success"></i> Recommendations</h4>
+  <ul class="list-group mb-3">
+    {% for rec in recommendations %}
+      <li class="list-group-item">
+        {% if rec.note %}
+          {{ rec.user.username }} recommended Note: {{ rec.note.title }} — "{{ rec.comment }}"
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="list-group-item">No recommendations yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Toggle Button for Teacher's Own Activity -->
+  <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#teacherActivity" aria-expanded="false" aria-controls="teacherActivity">
+    👨‍🏫 Show My Activity
+  </button>
+
+  <div class="collapse" id="teacherActivity">
+    <div class="card card-body">
+      <h5 class="text-secondary">My Last 10 Activities</h5>
+      <ul class="list-group">
+        {% for log in my_activity %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ log.description }}
+            <small class="text-muted">{{ log.timestamp|date:"M d, Y H:i" }}</small>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No activity recorded yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

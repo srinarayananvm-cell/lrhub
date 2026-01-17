@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'collaboration_home' %}">
+          <i class="fas fa-users"></i> Collaboration
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ group.name }}
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Group Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-0">{{ group.name }}</h2>
+      <p class="text-muted">{{ group.description }}</p>
+    </div>
+    <div>
+      <a href="{% url 'chat_view' group.pk %}" class="btn btn-outline-info">
+        <i class="fas fa-comments"></i> Open Group Chat
+      </a>
+      {% if group.created_by == user %}
+        <a href="{% url 'edit_group' group.pk %}" class="btn btn-outline-warning ms-2">
+          <i class="fas fa-edit"></i> Edit Group
+        </a>
+        <a href="{% url 'delete_group' group.pk %}" class="btn btn-outline-danger ms-2">
+          <i class="fas fa-trash"></i> Delete Group
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Posts Section -->
+  <h4 class="mt-4"><i class="fas fa-thumbtack"></i> Posts</h4>
+  {% for post in posts %}
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">{{ post.title }}</h5>
+        <p class="card-text">{{ post.content }}</p>
+        <small class="text-muted">
+          <i class="fas fa-user"></i> {{ post.author.username }} 
+          • <i class="fas fa-clock"></i> {{ post.created_at|date:"M d, Y H:i" }}
+        </small><br>
+
+        <!-- View Discussion -->
+        <a href="{% url 'post_detail' post.pk %}" class="btn btn-sm btn-primary mt-2">
+          <i class="fas fa-comments"></i> View Discussion
+        </a>
+
+        <!-- Edit/Delete only for author -->
+        {% if post.author == user %}
+          <a href="{% url 'edit_post' post.pk %}" class="btn btn-sm btn-warning mt-2">
+            <i class="fas fa-edit"></i> Edit
+          </a>
+          <a href="{% url 'delete_post' post.pk %}" class="btn btn-sm btn-danger mt-2">
+            <i class="fas fa-trash"></i> Delete
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted"><i class="fas fa-info-circle"></i> No posts yet. Start the discussion!</p>
+  {% endfor %}
+
+  <!-- New Post Form -->
+  <div class="mt-4">
+    <h5><i class="fas fa-plus-circle"></i> Add a New Post</h5>
+    <form method="post" class="border rounded p-3 bg-light shadow-sm">
+      {% csrf_token %}
+      {{ post_form.as_p }}
+      <button type="submit" class="btn btn-success">
+        <i class="fas fa-paper-plane"></i> Add Post
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

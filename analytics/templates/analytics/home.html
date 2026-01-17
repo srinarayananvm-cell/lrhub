@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+  <h2 class="mb-4 text-primary">
+    <i class="bi bi-graph-up-arrow"></i> Analytics Home
+  </h2>
+  <p class="text-muted">Welcome to the Analytics module. Choose what you want to explore:</p>
+
+  <div class="row">
+    <!-- Global Analytics -->
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-lg border-0 h-100 animate__animated animate__fadeInUp">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-globe text-info" style="font-size:2.5rem;"></i>
+          </div>
+          <h5 class="card-title">🌍 Global Analytics</h5>
+          <p class="card-text text-muted">See overall stats: users, downloads, ratings, and groups created.</p>
+          <a href="{% url 'global_analytics' %}" class="btn btn-info">
+            <i class="bi bi-bar-chart"></i> Go to ArivuVerse Stats
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {% if request.user.is_authenticated %}
+      {% if request.user.profile.role == "student" %}
+        <!-- Student Analytics -->
+        <div class="col-md-6 mb-3">
+          <div class="card shadow-lg border-0 h-100 animate__animated animate__fadeInUp">
+            <div class="card-body text-center">
+              <div class="mb-3">
+                <i class="bi bi-person-badge-fill text-success" style="font-size:2.5rem;"></i>
+              </div>
+              <h5 class="card-title">👨‍🎓 Student Analytics</h5>
+              <p class="card-text text-muted">Track your own downloads, ratings, recommendations, and searches.</p>
+              <a href="{% url 'student_analytics' %}" class="btn btn-success">
+                <i class="bi bi-graph-up"></i> Go to Your Activity
+              </a>
+            </div>
+          </div>
+        </div>
+      {% elif request.user.profile.role == "teacher" %}
+        <!-- Teacher Analytics -->
+        <div class="col-md-6 mb-3">
+          <div class="card shadow-lg border-0 h-100 animate__animated animate__fadeInUp">
+            <div class="card-body text-center">
+              <div class="mb-3">
+                <i class="bi bi-person-workspace text-warning" style="font-size:2.5rem;"></i>
+              </div>
+              <h5 class="card-title">👨‍🏫 Teacher Analytics</h5>
+              <p class="card-text text-muted">See students’ engagement with your notes and resources.</p>
+              <a href="{% url 'teacher_analytics' %}" class="btn btn-warning">
+                <i class="bi bi-bar-chart-line"></i> Go to Stats & Activity
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

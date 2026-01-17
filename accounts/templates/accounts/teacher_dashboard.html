@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>
+    <i class="fas fa-chalkboard-teacher text-primary"></i> Educator Dashboard
+  </h2>
+  <p>Welcome, {{ user.username }} 👋</p>
+
+  <!-- Dashboard navigation -->
+  <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'profile' %}active{% endif %}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">
+        <i class="fas fa-id-card"></i> Profile
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'notes' %}active{% endif %}" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button">
+        <i class="fas fa-book"></i> Upload Notes
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'search' %}active{% endif %}" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab content -->
+  <div class="tab-content mt-3">
+    <!-- Profile -->
+    <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile" role="tabpanel">
+      {% include "accounts/profile_card.html" %}
+      <button class="btn btn-primary mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+        <i class="fas fa-edit"></i> Edit Profile
+      </button>
+      <div class="collapse mt-3" id="editProfileForm">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" name="edit_profile" class="btn btn-success">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+    <!-- Notes -->
+    <div class="tab-pane fade {% if active_tab == 'notes' %}show active{% endif %}" id="notes" role="tabpanel">
+      <h4><i class="fas fa-upload text-primary"></i> Upload New Note / Version</h4>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ note_form.as_p }}
+        <button type="submit" name="upload_note" class="btn btn-success">
+          <i class="fas fa-upload"></i> Upload Note
+        </button>
+      </form>
+
+      <hr>
+      <!-- Transparent button to toggle notes -->
+      <button class="btn btn-transparent mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#myNotes">
+        <i class="fas fa-sticky-note text-info"></i> Notes Uploaded by You
+      </button>
+
+      <!-- Collapsible notes list -->
+      <div class="collapse mt-3" id="myNotes">
+        {% if notes %}
+          {% for note in notes %}
+            <div class="card mb-2">
+              <div class="card-body">
+                <strong><i class="fas fa-file-alt text-secondary"></i> {{ note.title }}</strong> (v{{ note.version }})<br>
+                <i class="fas fa-book"></i> Topic: {{ note.topic }}<br>
+                <i class="fas fa-user"></i> Uploaded by: {{ note.uploaded_by.username }}<br>
+
+                <!-- Rating Display -->
+                <p class="mt-2">
+                  <i class="fas fa-star text-warning"></i> Average Rating:
+                  {% with avg=note.average_rating %}
+                    {% if avg %}
+                      {{ avg|floatformat:1 }}/5 ({{ note.ratings.count }} votes)<br>
+                      {% for i in "12345"|make_list %}
+                        {% if i|add:"0" <= avg %}
+                          <i class="fa fa-star text-warning"></i>
+                        {% else %}
+                          <i class="fa fa-star text-secondary"></i>
+                        {% endif %}
+                      {% endfor %}
+                    {% else %}
+                      No ratings yet
+                    {% endif %}
+                  {% endwith %}
+                </p>
+
+                <a href="{{ note.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
+                  <i class="fas fa-download"></i> Download
+                </a>
+                {% if note.uploaded_by == user %}
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="note_id" value="{{ note.id }}">
+                  <input type="hidden" name="tab" value="notes">
+                  <button type="submit" name="delete_note" class="btn btn-sm btn-danger mt-2">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p><i class="fas fa-info-circle"></i> No notes uploaded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Search (Student Resources only) -->
+    <div class="tab-pane fade {% if active_tab == 'search' %}show active{% endif %}" id="search" role="tabpanel">
+      <h4><i class="fas fa-search text-primary"></i> Search Student Resources</h4>
+      <form method="get">
+        <input type="hidden" name="tab" value="search">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search student resources..." class="form-control mb-3">
+        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search"></i> Search</button>
+        <a href="?tab=search" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+      </form><br>
+
+      {% if resource_results %}
+        <h5><i class="fas fa-folder-open text-info"></i> Student Resources</h5>
+        <ul class="list-group mt-3">
+          {% for res in resource_results %}
+            <li class="list-group-item">
+              <strong><i class="fas fa-file text-secondary"></i> {{ res.title }}</strong><br>
+              {{ res.description }}<br>
+              <a href="{{ res.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-download"></i> Download
+              </a>
+
+              {% if res.verified %}
+                <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified</span>
+              {% else %}
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="resource_id" value="{{ res.id }}">
+                  <button type="submit" name="verify_resource" class="btn btn-sm btn-success mt-2">
+                    <i class="fas fa-check"></i> Verify
+                  </button>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif query %}
+        <p><i class="fas fa-info-circle"></i> No resources found for your search.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

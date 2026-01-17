@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Resources Module</h2>
+  <p>Upload and explore learning materials here.</p>
+
+  <!-- Dashboard button: show only if logged in -->
+  {% if user.is_authenticated %}
+    {% if user.profile.role == "teacher" %}
+      <a href="{% url 'teacher_dashboard' %}" class="btn btn-primary mb-3">
+        <i class="fas fa-chalkboard-teacher"></i> Go to Teacher Dashboard
+      </a>
+    {% elif user.profile.role == "student" %}
+      <a href="{% url 'student_dashboard' %}" class="btn btn-success mb-3">
+        <i class="fas fa-user-graduate"></i> Go to Student Dashboard
+      </a>
+    {% endif %}
+  {% endif %}
+
+  <!-- Search Resources (always visible) -->
+  <h4>Search Resources</h4>
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search by title or topic" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <select name="filter" class="form-select">
+        <option value="">All</option>
+        <option value="notes" {% if filter == 'notes' %}selected{% endif %}>Educators Notes</option>
+        <option value="resources" {% if filter == 'resources' %}selected{% endif %}>Learners Resources</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary me-3">Search</button>
+      <a href="{% url 'resources_home' %}" class="btn btn-secondary me-3">Clear</a>
+    </div>
+  </form>
+
+  <!-- Results -->
+  {% if results %}
+    <ul class="list-group">
+      {% for item in results %}
+        <li class="list-group-item">
+          <strong>{{ item.title }}</strong><br>
+          {% if item.topic %}Topic: {{ item.topic }}<br>{% endif %}
+          {% if item.description %}{{ item.description }}<br>{% endif %}
+          Uploaded by: {{ item.uploaded_by.username }}<br>
+
+          {% if user.is_authenticated %}
+            <a href="{{ item.file.url }}" class="btn btn-sm btn-outline-primary mt-2">Download</a>
+          {% else %}
+            <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
+              Sign up as Learner to Download
+            </a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% elif query %}
+    <p>No resources or notes found for your search.</p>
+  {% endif %}
+</div>
+{% endblock %}

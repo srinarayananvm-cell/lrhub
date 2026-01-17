@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+  <h2 class="mb-4 text-info">
+    <i class="bi bi-globe"></i> Global Analytics
+  </h2>
+  <p class="text-muted">Platform‑wide statistics.</p>
+
+  <div class="row">
+    <!-- User Counts -->
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-lg border-0 h-100">
+        <div class="card-body text-center">
+          <h5 class="card-title">👨‍🎓 Students</h5>
+          <p class="display-6 text-primary">{{ student_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-lg border-0 h-100">
+        <div class="card-body text-center">
+          <h5 class="card-title">👨‍🏫 Teachers</h5>
+          <p class="display-6 text-warning">{{ teacher_count }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Most Downloaded Notes -->
+  <h4 class="mt-4"><i class="bi bi-download text-info"></i> Most Downloaded Notes</h4>
+  <ul class="list-group">
+    {% for note in most_downloaded_notes %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ note.title }}
+        <span class="badge bg-info">{{ note.downloads }} downloads</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No downloads yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Most Downloaded Resources -->
+  <h4 class="mt-4"><i class="bi bi-download text-success"></i> Most Downloaded Resources</h4>
+  <ul class="list-group">
+    {% for res in most_downloaded_resources %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ res.title }}
+        <span class="badge bg-success">{{ res.downloads }} downloads</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No downloads yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Highest Rated Notes -->
+  <h4 class="mt-4"><i class="bi bi-star-fill text-warning"></i> Highest Rated Notes</h4>
+  <div class="row">
+    {% for note in top_notes %}
+      <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <strong>{{ note.title }}</strong><br>
+            Avg Rating: {{ note.avg_rating|floatformat:1 }}/5
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No ratings yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Highest Rated Resources -->
+  <h4 class="mt-4"><i class="bi bi-star-fill text-warning"></i> Highest Rated Resources</h4>
+  <div class="row">
+    {% for res in top_resources %}
+      <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <strong>{{ res.title }}</strong><br>
+            Avg Rating: {{ res.avg_rating|floatformat:1 }}/5
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No ratings yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Groups -->
+  <h4 class="mt-4"><i class="bi bi-people-fill text-secondary"></i> Groups Created</h4>
+  <p class="lead">{{ group_count }} groups created</p>
+</div>
+{% endblock %}

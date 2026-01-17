@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+  <h2 class="mb-4 text-success">
+    <i class="bi bi-person-badge-fill"></i> Student Analytics
+  </h2>
+  <p class="text-muted">Your personal activity log and engagement stats.</p>
+
+  <!-- My Uploaded Resources -->
+  <h4><i class="bi bi-upload text-info"></i> My Uploaded Resources</h4>
+  <ul class="list-group mb-3">
+    {% for res in my_resources %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ res.title }}
+        <span>
+          📥 {{ res.downloads }} downloads |
+          ⭐ {% if res.avg_rating %}{{ res.avg_rating|floatformat:1 }}/5{% else %}No ratings yet{% endif %}
+        </span>
+      </li>
+    {% empty %}
+      <li class="list-group-item">You haven’t uploaded any resources yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Recommendations on My Resources -->
+  <h4><i class="bi bi-hand-thumbs-up-fill text-primary"></i> Recommendations on My Resources</h4>
+  <ul class="list-group mb-3">
+    {% for rec in my_resource_recommendations %}
+      <li class="list-group-item">
+        {{ rec.user.username }} recommended {{ rec.resource.title }} — "{{ rec.comment }}"
+      </li>
+    {% empty %}
+      <li class="list-group-item">No recommendations on your resources yet.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Toggle Button for My Activity Log -->
+  <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#studentActivity" aria-expanded="false" aria-controls="studentActivity">
+    📊 Show My Last 10 Activities
+  </button>
+
+  <div class="collapse" id="studentActivity">
+    <div class="card card-body">
+      <h5 class="text-secondary">My Activity Log</h5>
+      <ul class="list-group">
+        {% for log in logs %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              {% if log.action == "note_download" %}
+                📥 Downloaded Note: {{ log.description }}
+              {% elif log.action == "resource_download" %}
+                📥 Downloaded Resource: {{ log.description }}
+              {% elif log.action == "rating" %}
+                ⭐ Rated: {{ log.description }}
+              {% elif log.action == "recommendation" %}
+                👍 Recommended: {{ log.description }}
+              {% elif log.action == "login" %}
+                🔑 Login
+              {% elif log.action == "logout" %}
+                🚪 Logout
+              {% elif log.action == "edit_profile" %}
+                📝 Edited Profile
+              {% elif log.action == "group_post" %}
+                📤 Uploaded: {{ log.description }}
+              {% elif log.action == "comment" %}
+                💬 Commented: {{ log.description }}
+              {% elif log.action == "message" %}
+                ✉️ Messaged: {{ log.description }}
+              {% else %}
+                📝 Activity: {{ log.description }}
+              {% endif %}
+            </span>
+            <small class="text-muted">{{ log.timestamp|date:"M d, Y H:i" }}</small>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No activity recorded yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

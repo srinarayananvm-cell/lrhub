@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'collaboration_home' %}">
+          <i class="fas fa-users"></i> Collaboration
+        </a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'group_detail' group.pk %}">
+          <i class="fas fa-layer-group"></i> {{ group.name }}
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-comments"></i> Chat
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Chat Header -->
+  <h2 class="mb-3"><i class="fas fa-comments"></i> Chat in {{ group.name }}</h2>
+
+  <!-- Chat messages -->
+  <div id="chat-box" class="border rounded p-3 mb-3 shadow-sm" 
+       style="height: 400px; overflow-y: auto; background-color: #f9f9f9;">
+    {% for message in chat_messages %}
+      {% if message.author == user %}
+        <!-- Current user's message -->
+        <div class="d-flex justify-content-end mb-2">
+          <div class="bg-primary text-white p-2 rounded shadow-sm" style="max-width: 70%;">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>You</strong>
+              <div>
+                <a href="{% url 'edit_message' message.pk %}" class="btn btn-sm btn-warning py-0 px-1">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'delete_message' message.pk %}" class="btn btn-sm btn-danger py-0 px-1">
+                  <i class="fas fa-trash"></i>
+                </a>
+              </div>
+            </div>
+            <div>{{ message.content }}</div>
+            <small class="text-light">
+              <i class="fas fa-clock"></i> {{ message.created_at|date:"M d, H:i" }}
+            </small>
+          </div>
+        </div>
+      {% else %}
+        <!-- Other user's message -->
+        <div class="d-flex justify-content-start mb-2">
+          <div class="bg-light p-2 rounded shadow-sm" style="max-width: 70%;">
+            <div>
+              <strong><i class="fas fa-user-circle"></i> 
+                {% if message.author.profile.role == "teacher" %}
+                  <span class="text-primary fw-bold">{{ message.author.username }}</span>
+                {% elif message.author.profile.role == "student" %}
+                  <span class="text-success">{{ message.author.username }}</span>
+                {% else %}
+                  {{ message.author.username }}
+                {% endif %}
+              </strong>
+            </div>
+            <div>{{ message.content }}</div>
+            <small class="text-muted">
+              <i class="fas fa-clock"></i> {{ message.created_at|date:"M d, H:i" }}
+            </small>
+          </div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <p class="text-muted"><i class="fas fa-info-circle"></i> No messages yet. Start the conversation!</p>
+    {% endfor %}
+  </div>
+
+  <!-- Message form -->
+  <form method="post" class="d-flex align-items-center">
+    {% csrf_token %}
+    {{ form.content }}
+    <button type="submit" class="btn btn-primary ms-2">
+      <i class="fas fa-paper-plane"></i> Send
+    </button>
+  </form>
+  <h2 class="mb-3 d-flex justify-content-between align-items-center">
+  <span><i class="fas fa-comments"></i> Chat in {{ group.name }}</span>
+  <a href="{% url 'clear_my_chat' group.pk %}" class="btn btn-sm btn-outline-danger">
+    <i class="fas fa-trash"></i> Clear My Chat
+  </a>
+</h2>
+</div>
+
+<!-- Auto-scroll to bottom -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+</script>
+{% endblock %}

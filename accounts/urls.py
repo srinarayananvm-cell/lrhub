@@ -1,0 +1,39 @@
+from django.urls import path
+from .views import SignupView
+from . import views
+from django.contrib.auth import views as auth_views
+from .views import CustomPasswordResetView
+
+urlpatterns = [
+    path('login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
+    path('signup/', SignupView.as_view(), name='signup'),
+    path('logout/', views.logout_view, name='logout'),
+    path('auth/', views.auth_page, name='auth_page'),
+    path('role-redirect/', views.role_redirect, name='role_redirect'),
+    path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
+    path("download/note/<int:note_id>/", views.download_note, name="download_note"),
+    path("download/resource/<int:resource_id>/", views.download_student_resource, name="download_student_resource"),
+    path('password_reset/', CustomPasswordResetView.as_view(
+        template_name='accounts/password_reset_form.html',
+        subject_template_name='accounts/password_reset_subject.txt',
+        ), name='password_reset'),
+
+    path('password_reset/done/',
+         auth_views.PasswordResetDoneView.as_view(
+             template_name='accounts/password_reset_done.html'
+         ),
+         name='password_reset_done'),
+    path('reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name='accounts/password_reset_confirm.html'
+         ),
+         name='password_reset_confirm'),
+    path('reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(
+             template_name='accounts/password_reset_complete.html'
+         ),
+         name='password_reset_complete'),
+]
+

@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+  <h2 class="animate__animated animate__fadeInDown">
+    <i class="fas fa-user-graduate text-primary"></i> Learner Dashboard
+  </h2>
+  <p class="animate__animated animate__fadeInDown">Welcome, {{ user.username }} 👋</p>
+
+  <!-- Dashboard navigation -->
+  <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'profile' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#profile">
+        <i class="fas fa-id-card"></i> Profile
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'my_resources' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#my_resources">
+        <i class="fas fa-upload"></i> My Resources
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'notes' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#notes">
+        <i class="fas fa-book-open"></i> Notes
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'resources' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#resources">
+        <i class="fas fa-users"></i> Resources
+      </button>
+    </li>
+  </ul>
+  <!-- Tab content -->
+  <div class="tab-content mt-3">
+    <!-- Profile -->
+    <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile">
+      <div class="card mt-3 animate__animated animate__fadeInLeft">
+        <div class="card-body">
+          <p><i class="fas fa-envelope text-info"></i> <strong>Email:</strong> {{ user.email }}</p>
+          <p><i class="fas fa-phone text-success"></i> <strong>Phone:</strong> {{ profile.phone }}</p>
+          <p><i class="fas fa-info-circle text-secondary"></i> <strong>Bio:</strong> {{ profile.bio }}</p>
+          {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="Avatar" width="120" class="rounded-circle shadow animate__animated animate__zoomIn">
+          {% endif %}
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-3 animate__animated animate__pulse animate__infinite" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+        <i class="fas fa-edit"></i> Edit Profile
+      </button>
+      <div class="collapse mt-3" id="editProfileForm">
+        <form method="post" enctype="multipart/form-data" class="animate__animated animate__fadeIn">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <input type="hidden" name="tab" value="profile">
+          <button type="submit" name="edit_profile" class="btn btn-success">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+    <!-- My Resources -->
+    <div class="tab-pane fade {% if active_tab == 'my_resources' %}show active{% endif %}" id="my_resources">
+      <h4><i class="fas fa-share-alt text-primary"></i> Share Your Resource</h4>
+      <form method="post" enctype="multipart/form-data" class="animate__animated animate__fadeIn">
+        {% csrf_token %}
+        {{ resource_form.as_p }}
+        <input type="hidden" name="tab" value="my_resources">
+        <button type="submit" name="upload_resource" class="btn btn-success">
+          <i class="fas fa-upload"></i> Upload Resource
+        </button>
+      </form>
+
+      <hr>
+      <button class="btn btn-primary mt-3 animate__animated animate__pulse animate__infinite" type="button" data-bs-toggle="collapse" data-bs-target="#myUploads">
+        <i class="fas fa-folder-open"></i> Show My Uploaded Resources
+      </button>
+      <div class="collapse mt-3" id="myUploads">
+        {% for res in my_resources %}
+          <div class="card mb-2 animate__animated animate__fadeInRight">
+            <div class="card-body">
+              <i class="fas fa-file-alt text-info"></i> <strong>{{ res.title }}</strong>
+              {% if res.verified %}
+                <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified by Teacher</span>
+              {% endif %}
+              <br>
+              {{ res.description }}<br>
+              <a href="{{ res.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-download"></i> View
+              </a>
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="resource_id" value="{{ res.id }}">
+                <input type="hidden" name="tab" value="my_resources">
+                <button type="submit" name="delete_resource" class="btn btn-sm btn-danger mt-2">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        {% empty %}
+          <p><i class="fas fa-info-circle"></i> You haven't uploaded any resources yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- Notes (Educators) -->
+    <div class="tab-pane fade {% if active_tab == 'notes' %}show active{% endif %}" id="notes">
+      <h4><i class="fas fa-chalkboard-teacher text-warning"></i> Educators Notes</h4>
+
+      <!-- Search Notes -->
+      <form method="get" class="d-flex mb-3 animate__animated animate__fadeIn">
+        <input type="text" name="q" class="form-control me-2" placeholder="Search notes..." value="{{ query }}">
+        <input type="hidden" name="tab" value="notes">
+        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search"></i> Search</button>
+        <a href="?tab=notes" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+      </form>
+
+      {% if note_results %}
+        <h5><i class="fas fa-search text-info"></i> Search Results</h5>
+        <ul class="list-group mt-3 animate__animated animate__fadeInRight">
+          {% for note in note_results %}
+            <li class="list-group-item">
+              <i class="fas fa-sticky-note text-primary"></i> <strong>{{ note.title }}</strong> (v{{ note.version }})<br>
+              <i class="fas fa-book"></i> Topic: {{ note.topic }}<br>
+              <a href="{% url 'download_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-download"></i> Download Note
+              </a>
+
+              <!-- Rating Display -->
+              <p class="mt-2">
+                <i class="fas fa-star text-warning"></i> Average Rating:
+                {% with avg=note.average_rating %}
+                  {% if avg %}
+                    {{ avg|floatformat:1 }}/5 ({{ note.ratings.count }} votes)<br>
+                    {% for i in "12345"|make_list %}
+                      {% if i|add:"0" <= avg %}
+                        <i class="fa fa-star text-warning animate__animated animate__heartBeat"></i>
+                      {% else %}
+                        <i class="fa fa-star text-secondary"></i>
+                      {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    No ratings yet
+                  {% endif %}
+                {% endwith %}
+              </p>
+
+              <!-- Rating Form -->
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <div class="star-rating">
+                  {% for i in "54321"|make_list %}
+                    <input type="radio" id="star{{ i }}-note{{ note.id }}" name="value" value="{{ i }}"
+                      {% if note.my_rating and note.my_rating.value == i|add:"0" %}checked{% endif %}>
+                    <label for="star{{ i }}-note{{ note.id }}"><i class="fa fa-star"></i></label>
+                  {% endfor %}
+                </div>
+                <input type="hidden" name="note_id" value="{{ note.id }}">
+                <input type="hidden" name="tab" value="notes">
+                <input type="hidden" name="q" value="{{ query }}">
+                <button type="submit" name="rate_note" class="btn btn-sm btn-warning mt-2">
+                  <i class="fas fa-star"></i> Rate
+                </button>
+              </form>
+
+              <!-- Recommendation Form -->
+              <button class="btn btn-sm btn-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#recommendFormNote{{ note.id }}">
+                <i class="fas fa-thumbs-up"></i> Recommend
+              </button>
+              <div class="collapse mt-2" id="recommendFormNote{{ note.id }}">
+                <form method="post">
+                  {% csrf_token %}
+                  {{ recommendation_form.comment }}
+                  <input type="hidden" name="note_id" value="{{ note.id }}">
+                  <input type="hidden" name="tab" value="notes">
+                  <input type="hidden" name="q" value="{{ query }}">
+                  <button type="submit" name="recommend_note" class="btn btn-sm btn-success">
+                    <i class="fas fa-paper-plane"></i> Submit Recommendation
+                  </button>
+                </form>
+              </div>
+
+              <!-- Show Recommendations -->
+              <button class="btn btn-sm btn-outline-secondary mt-2" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#noteRecs{{ note.id }}">
+                <i class="fas fa-comments"></i> Show Recommendations
+              </button>
+              <div class="collapse mt-2" id="noteRecs{{ note.id }}">
+                {% for rec in note_recommendations %}
+                  {% if rec.note.id == note.id %}
+                    <div class="animate__animated animate__fadeInLeft">
+                      <i class="fa fa-comment text-success"></i>
+                      <strong>{{ rec.user.username }}</strong>: {{ rec.comment }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+        {% elif query %}
+        <p><i class="fas fa-info-circle"></i> No notes found for your search.</p>
+      {% endif %}
+
+      <hr>
+      <h5><i class="fas fa-star text-warning"></i> Top Rated Notes</h5>
+      {% for note in top_notes %}
+        <div class="card mb-2 animate__animated animate__fadeInRight">
+          <div class="card-body">
+            <i class="fas fa-sticky-note text-primary"></i> <strong>{{ note.title }}</strong> (v{{ note.version }})<br>
+            <i class="fas fa-book"></i> Topic: {{ note.topic }}<br>
+            <a href="{% url 'download_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="fas fa-download"></i> Download Note
+            </a>
+            <span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> Highly Rated</span>
+          </div>
+        </div>
+      {% empty %}
+        <p><i class="fas fa-info-circle"></i> No notes available yet.</p>
+      {% endfor %}
+    </div>
+    <!-- Resources (Other Students) -->
+    <div class="tab-pane fade {% if active_tab == 'resources' %}show active{% endif %}" id="resources">
+      <h4><i class="fas fa-users text-success"></i> Student Resources</h4>
+
+      <!-- Search Resources -->
+      <form method="get" class="d-flex mb-3 animate__animated animate__fadeIn">
+        <input type="text" name="q" class="form-control me-2" placeholder="Search student resources..." value="{{ query }}">
+        <input type="hidden" name="tab" value="resources">
+        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search"></i> Search</button>
+        <a href="?tab=resources" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+      </form>
+
+      {% if resource_results %}
+        <h5><i class="fas fa-search text-info"></i> Search Results</h5>
+        <ul class="list-group mt-3 animate__animated animate__fadeInRight">
+          {% for res in resource_results %}
+            <li class="list-group-item">
+              <i class="fas fa-file text-info"></i> <strong>{{ res.title }}</strong>
+              {% if res.verified %}
+                <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified by Teacher</span>
+              {% endif %}
+              <br>
+              {{ res.description }}<br>
+              <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-download"></i> Download Resource
+              </a>
+
+              <!-- Rating Display -->
+              <p class="mt-2">
+                <i class="fas fa-star text-warning"></i> Average Rating:
+                {% with avg=res.average_rating %}
+                  {% if avg %}
+                    {{ avg|floatformat:1 }}/5 ({{ res.ratings.count }} votes)<br>
+                    {% for i in "12345"|make_list %}
+                      {% if i|add:"0" <= avg %}
+                        <i class="fa fa-star text-warning animate__animated animate__heartBeat"></i>
+                      {% else %}
+                        <i class="fa fa-star text-secondary"></i>
+                      {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    No ratings yet
+                  {% endif %}
+                {% endwith %}
+              </p>
+
+              <!-- Rating Form -->
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <div class="star-rating">
+                  {% for i in "54321"|make_list %}
+                    <input type="radio" id="star{{ i }}-res{{ res.id }}" name="value" value="{{ i }}"
+                      {% if res.my_rating and res.my_rating.value == i|add:"0" %}checked{% endif %}>
+                    <label for="star{{ i }}-res{{ res.id }}"><i class="fa fa-star"></i></label>
+                  {% endfor %}
+                </div>
+                <input type="hidden" name="resource_id" value="{{ res.id }}">
+                <input type="hidden" name="tab" value="resources">
+                <input type="hidden" name="q" value="{{ query }}">
+                <button type="submit" name="rate_item" class="btn btn-sm btn-warning mt-2">
+                  <i class="fas fa-star"></i> Rate
+                </button>
+              </form>
+
+              <!-- Recommendation Form -->
+              <button class="btn btn-sm btn-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#recommendFormRes{{ res.id }}">
+                <i class="fas fa-thumbs-up"></i> Recommend
+              </button>
+              <div class="collapse mt-2" id="recommendFormRes{{ res.id }}">
+                <form method="post">
+                  {% csrf_token %}
+                  {{ recommendation_form.comment }}
+                  <input type="hidden" name="resource_id" value="{{ res.id }}">
+                  <input type="hidden" name="tab" value="resources">
+                  <input type="hidden" name="q" value="{{ query }}">
+                  <button type="submit" name="recommend_item" class="btn btn-sm btn-success">
+                    <i class="fas fa-paper-plane"></i> Submit Recommendation
+                  </button>
+                </form>
+              </div>
+
+              <!-- Show Recommendations -->
+              <button class="btn btn-sm btn-outline-secondary mt-2" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#resRecs{{ res.id }}">
+                <i class="fas fa-comments"></i> Show Recommendations
+              </button>
+              <div class="collapse mt-2" id="resRecs{{ res.id }}">
+                {% for rec in res_recommendations %}
+                  {% if rec.resource.id == res.id %}
+                    <div class="animate__animated animate__fadeInLeft">
+                      <i class="fa fa-comment text-primary"></i>
+                      <strong>{{ rec.user.username }}</strong>: {{ rec.comment }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+        {% elif query %}
+        <p><i class="fas fa-info-circle"></i> No resources found for your search.</p>
+      {% endif %}
+
+      <hr>
+      <h5><i class="fas fa-star text-warning"></i> Top Rated Resources</h5>
+      {% for res in top_resources %}
+        <div class="card mb-2 animate__animated animate__fadeInRight">
+          <div class="card-body">
+            <i class="fas fa-file text-info"></i> <strong>{{ res.title }}</strong>
+            {% if res.verified %}
+              <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified by Educator</span>
+            {% endif %}
+            <br>
+            {{ res.description }}<br>
+            <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="fas fa-download"></i> Download Resource
+            </a>
+            <span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> Highly Rated</span>
+          </div>
+        </div>
+      {% empty %}
+        <p><i class="fas fa-info-circle"></i> No resources available yet.</p>
+      {% endfor %}
+    </div>
+  </div> <!-- end of tab-content -->
+</div> <!-- end of container -->
+{% endblock %}
