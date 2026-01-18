@@ -20,6 +20,24 @@
     <style>
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+        min-height: 100vh;
+        position: relative;
+      }
+
+      /* Subtle animated background pattern */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+          radial-gradient(circle at 20% 50%, rgba(255, 193, 7, 0.08) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, rgba(13, 110, 253, 0.08) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
       }
       .navbar-brand i {
         color: #ffc107;
@@ -82,7 +100,7 @@
       }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-light">
+<body class="d-flex flex-column min-vh-100">
 
 <!-- Header -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm w-100">

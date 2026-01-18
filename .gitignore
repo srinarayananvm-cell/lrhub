@@ -1,8 +1,22 @@
+# Virtual environment
 venv/
+
+# Python cache
 __pycache__/
+
+# Local SQLite database
 db.sqlite3
+
+# Log files
 *.log
+
+# Media uploads
 media/*.pdf
 media/avatars/*
 media/notes/*
 media/student_resources/*
+
+# Django fixtures (JSON backups)
+fixtures/*.json
+*/fixtures/*.json
+
