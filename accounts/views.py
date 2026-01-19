@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,10 +8,10 @@ from .models import Profile
 from .forms import SignupForm, LoginForm, ProfileForm
 from resources.models import Note, StudentResource, Rating, Recommendation
 from resources.forms import NoteForm, StudentResourceForm, RatingForm, RecommendationForm
-from django.shortcuts import render, get_object_or_404
 from django.http import FileResponse
-from django.contrib.auth.decorators import login_required
 from analytics.models import ActivityLog
+from django.contrib.auth.decorators import user_passes_test
+
 # --- Auth Page (combined login/signup tabs) ---
 def auth_page(request):
     signup_form = SignupForm()
@@ -70,7 +70,7 @@ def role_redirect(request):
     profile = Profile.objects.get(user=request.user)
 
     if request.user.is_superuser:
-        return redirect('/admin/')
+        return redirect('admin_dashboard')
     elif profile.role == 'teacher':
         return redirect('teacher_dashboard')
     elif profile.role == 'student':
@@ -440,9 +440,46 @@ def download_student_resource(request, resource_id):
     return FileResponse(resource.file.open(), as_attachment=True, filename=resource.file.name)
 
 from rest_framework import generics
-from django.contrib.auth.models import User
 from .serializers import SignupSerializer
 
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
+
+from django.contrib.auth.decorators import user_passes_test
+
+
+# ✅ Only superusers can access
+@user_passes_test(lambda u: u.is_superuser)
+def admin_dashboard(request):
+    users = User.objects.all().select_related("profile")
+    return render(request, "accounts/admin_dashboard.html", {"users": users})
+
+@user_passes_test(lambda u: u.is_superuser)
+def add_user(request):
+    if request.method == "POST":
+        form = SignupForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("admin_dashboard")
+    else:
+        form = SignupForm()
+    return render(request, "accounts/add_user.html", {"form": form})
+
+from .forms import UserEditForm, ProfileEditForm
+
+@user_passes_test(lambda u: u.is_superuser)
+def edit_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = user.profile
+    if request.method == "POST":
+        form = UserEditForm(request.POST, instance=user)
+        profile_form = ProfileEditForm(request.POST, instance=profile)
+        if form.is_valid() and profile_form.is_valid():
+            form.save()
+            profile_form.save()
+            return redirect("admin_dashboard")
+    else:
+        form = UserEditForm(instance=user)
+        profile_form = ProfileEditForm(instance=profile)
+    return render(request, "accounts/edit_user.html", {"form": form, "profile_form": profile_form})

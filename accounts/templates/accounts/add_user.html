@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3><i class="fas fa-user-plus me-2"></i> Add User</h3>
+  <form method="post" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success w-100">
+      <i class="fas fa-save me-2"></i> Save
+    </button>
+  </form>
+</div>
+{% endblock %}

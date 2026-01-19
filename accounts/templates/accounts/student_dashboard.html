@@ -33,7 +33,7 @@
   <div class="tab-content mt-3">
     <!-- Profile -->
     <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile">
-      <div class="card mt-3 animate__animated animate__fadeInLeft">
+      <div class="card mt-3 animate__animated animate__fadeIn">
         <div class="card-body">
           <p><i class="fas fa-envelope text-info"></i> <strong>Email:</strong> {{ user.email }}</p>
           <p><i class="fas fa-phone text-success"></i> <strong>Phone:</strong> {{ profile.phone }}</p>
@@ -44,64 +44,94 @@
         </div>
       </div>
 
-      <button class="btn btn-primary mt-3 animate__animated animate__pulse animate__infinite" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
-        <i class="fas fa-edit"></i> Edit Profile
+      <!-- Edit Profile Toggle -->
+      <button class="btn btn-outline-primary mt-3 w-100 d-flex align-items-center justify-content-center"
+              type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+        <i class="fas fa-edit me-2"></i> Edit Profile
       </button>
+
+      <!-- Collapsible Edit Form -->
       <div class="collapse mt-3" id="editProfileForm">
-        <form method="post" enctype="multipart/form-data" class="animate__animated animate__fadeIn">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <input type="hidden" name="tab" value="profile">
-          <button type="submit" name="edit_profile" class="btn btn-success">
-            <i class="fas fa-save"></i> Save Changes
-          </button>
-        </form>
+        <div class="card shadow-sm animate__animated animate__fadeIn">
+          <div class="card-header bg-success text-white d-flex align-items-center">
+            <i class="fas fa-user-edit me-2"></i>
+            <h6 class="mb-0">Update Profile</h6>
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="row g-3">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <input type="hidden" name="tab" value="profile">
+              <!-- Save Button -->
+              <div class="col-12">
+                <button type="submit" name="edit_profile" class="btn btn-success w-100">
+                  <i class="fas fa-save me-2"></i> Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- My Resources -->
-    <div class="tab-pane fade {% if active_tab == 'my_resources' %}show active{% endif %}" id="my_resources">
-      <h4><i class="fas fa-share-alt text-primary"></i> Share Your Resource</h4>
-      <form method="post" enctype="multipart/form-data" class="animate__animated animate__fadeIn">
+<!-- My Resources -->
+<div class="tab-pane fade {% if active_tab == 'my_resources' %}show active{% endif %}" id="my_resources">
+  <h4 class="mb-3">
+    <i class="fas fa-share-alt text-primary"></i> Share Your Resource
+  </h4>
+
+  <!-- Upload Form -->
+  <div class="card shadow-sm mb-3 animate__animated animate__fadeIn">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" class="row g-3">
         {% csrf_token %}
         {{ resource_form.as_p }}
         <input type="hidden" name="tab" value="my_resources">
-        <button type="submit" name="upload_resource" class="btn btn-success">
-          <i class="fas fa-upload"></i> Upload Resource
-        </button>
+        <div class="col-12">
+          <button type="submit" name="upload_resource" class="btn btn-success w-100">
+            <i class="fas fa-upload me-2"></i> Upload Resource
+          </button>
+        </div>
       </form>
-
-      <hr>
-      <button class="btn btn-primary mt-3 animate__animated animate__pulse animate__infinite" type="button" data-bs-toggle="collapse" data-bs-target="#myUploads">
-        <i class="fas fa-folder-open"></i> Show My Uploaded Resources
-      </button>
-      <div class="collapse mt-3" id="myUploads">
-        {% for res in my_resources %}
-          <div class="card mb-2 animate__animated animate__fadeInRight">
-            <div class="card-body">
-              <i class="fas fa-file-alt text-info"></i> <strong>{{ res.title }}</strong>
-              {% if res.verified %}
-                <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified by Teacher</span>
-              {% endif %}
-              <br>
-              {{ res.description }}<br>
-              <a href="{{ res.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
-                <i class="fas fa-download"></i> View
-              </a>
-              <form method="post" class="d-inline">
-                {% csrf_token %}
-                <input type="hidden" name="resource_id" value="{{ res.id }}">
-                <input type="hidden" name="tab" value="my_resources">
-                <button type="submit" name="delete_resource" class="btn btn-sm btn-danger mt-2">
-                  <i class="fas fa-trash"></i> Delete
-                </button>
-              </form>
-            </div>
-          </div>
-        {% empty %}
-          <p><i class="fas fa-info-circle"></i> You haven't uploaded any resources yet.</p>
-        {% endfor %}
-      </div>
     </div>
+  </div>
+
+  <hr>
+
+  <!-- Toggle My Uploads -->
+  <button class="btn btn-outline-primary w-100 mt-3 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#myUploads">
+    <i class="fas fa-folder-open me-2"></i> Show My Uploaded Resources
+  </button>
+
+  <!-- Uploaded Resources -->
+  <div class="collapse mt-3" id="myUploads">
+    {% for res in my_resources %}
+      <div class="card mb-2 shadow-sm animate__animated animate__fadeIn">
+        <div class="card-body">
+          <i class="fas fa-file-alt text-info"></i> <strong>{{ res.title }}</strong>
+          {% if res.verified %}
+            <span class="badge bg-success ms-2">
+              <i class="fas fa-check-circle"></i> Verified by Teacher
+            </span>
+          {% endif %}
+          <p class="mt-2">{{ res.description }}</p>
+          <a href="{{ res.file.url }}" target="_blank" class="btn btn-sm btn-outline-success mt-2"> 
+            <i class="fas fa-eye"></i> View Notes
+          </a>
+          <form method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="resource_id" value="{{ res.id }}">
+            <input type="hidden" name="tab" value="my_resources">
+            <button type="submit" name="delete_resource" class="btn btn-sm btn-danger">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted"><i class="fas fa-info-circle"></i> You haven't uploaded any resources yet.</p>
+    {% endfor %}
+  </div>
+</div>
     <!-- Notes (Educators) -->
     <div class="tab-pane fade {% if active_tab == 'notes' %}show active{% endif %}" id="notes">
       <h4><i class="fas fa-chalkboard-teacher text-warning"></i> Educators Notes</h4>
@@ -116,13 +146,16 @@
 
       {% if note_results %}
         <h5><i class="fas fa-search text-info"></i> Search Results</h5>
-        <ul class="list-group mt-3 animate__animated animate__fadeInRight">
+        <ul class="list-group mt-3 animate__animated animate__fadeIn">
           {% for note in note_results %}
             <li class="list-group-item">
               <i class="fas fa-sticky-note text-primary"></i> <strong>{{ note.title }}</strong> (v{{ note.version }})<br>
               <i class="fas fa-book"></i> Topic: {{ note.topic }}<br>
+              <a href="{{ note.file.url }}" target="_blank" class="btn btn-sm btn-outline-success mt-2"> 
+                <i class="fas fa-eye"></i> View Notes
+              </a>
               <a href="{% url 'download_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">
-                <i class="fas fa-download"></i> Download Note
+                <i class="fas fa-download"></i> Download Notes
               </a>
 
               <!-- Rating Display -->
@@ -187,7 +220,7 @@
               <div class="collapse mt-2" id="noteRecs{{ note.id }}">
                 {% for rec in note_recommendations %}
                   {% if rec.note.id == note.id %}
-                    <div class="animate__animated animate__fadeInLeft">
+                    <div class="animate__animated animate__fadeIn">
                       <i class="fa fa-comment text-success"></i>
                       <strong>{{ rec.user.username }}</strong>: {{ rec.comment }}
                     </div>
@@ -204,12 +237,15 @@
       <hr>
       <h5><i class="fas fa-star text-warning"></i> Top Rated Notes</h5>
       {% for note in top_notes %}
-        <div class="card mb-2 animate__animated animate__fadeInRight">
+        <div class="card mb-2 animate__animated animate__fadeIn">
           <div class="card-body">
             <i class="fas fa-sticky-note text-primary"></i> <strong>{{ note.title }}</strong> (v{{ note.version }})<br>
             <i class="fas fa-book"></i> Topic: {{ note.topic }}<br>
+            <a href="{{ note.file.url }}" target="_blank" class="btn btn-sm btn-outline-success mt-2"> 
+                <i class="fas fa-eye"></i> View Notes
+            </a>
             <a href="{% url 'download_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">
-              <i class="fas fa-download"></i> Download Note
+              <i class="fas fa-download"></i> Download Notes
             </a>
             <span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> Highly Rated</span>
           </div>
@@ -232,7 +268,7 @@
 
       {% if resource_results %}
         <h5><i class="fas fa-search text-info"></i> Search Results</h5>
-        <ul class="list-group mt-3 animate__animated animate__fadeInRight">
+        <ul class="list-group mt-3 animate__animated animate__fadeIn">
           {% for res in resource_results %}
             <li class="list-group-item">
               <i class="fas fa-file text-info"></i> <strong>{{ res.title }}</strong>
@@ -241,6 +277,9 @@
               {% endif %}
               <br>
               {{ res.description }}<br>
+              <a href="{{ res.file.url }}" target="_blank" class="btn btn-sm btn-outline-success mt-2"> 
+                <i class="fas fa-eye"></i> View
+              </a>
               <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
                 <i class="fas fa-download"></i> Download Resource
               </a>
@@ -307,7 +346,7 @@
               <div class="collapse mt-2" id="resRecs{{ res.id }}">
                 {% for rec in res_recommendations %}
                   {% if rec.resource.id == res.id %}
-                    <div class="animate__animated animate__fadeInLeft">
+                    <div class="animate__animated animate__fadeIn">
                       <i class="fa fa-comment text-primary"></i>
                       <strong>{{ rec.user.username }}</strong>: {{ rec.comment }}
                     </div>
@@ -324,7 +363,7 @@
       <hr>
       <h5><i class="fas fa-star text-warning"></i> Top Rated Resources</h5>
       {% for res in top_resources %}
-        <div class="card mb-2 animate__animated animate__fadeInRight">
+        <div class="card mb-2 animate__animated animate__fadeIn">
           <div class="card-body">
             <i class="fas fa-file text-info"></i> <strong>{{ res.title }}</strong>
             {% if res.verified %}
@@ -332,6 +371,9 @@
             {% endif %}
             <br>
             {{ res.description }}<br>
+            <a href="{{ res.file.url }}" target="_blank" class="btn btn-sm btn-outline-success mt-2"> 
+                <i class="fas fa-eye"></i> View
+              </a>
             <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
               <i class="fas fa-download"></i> Download Resource
             </a>

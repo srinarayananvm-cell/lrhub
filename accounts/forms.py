@@ -8,24 +8,40 @@ from django.contrib.auth.forms import AuthenticationForm
 class SignupForm(forms.ModelForm):
     password1 = forms.CharField(
         label="Password",
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your password'
+        })
     )
     password2 = forms.CharField(
         label="Confirm Password",
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Re-enter your password'
+        })
     )
     role = forms.ChoiceField(
         choices=Profile.ROLE_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
         label="Role"
     )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'role']   # ✅ includes role
+        fields = ['username', 'email', 'role']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Create a username'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your email address'
+            }),
+        }
+        help_texts = { 'username': None,
         }
 
     def clean_password2(self):
@@ -39,33 +55,63 @@ class SignupForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-        # ✅ Avoid duplicate profile
+            
         profile, created = Profile.objects.get_or_create(user=user)
-        profile.role = self.cleaned_data["role"]   # teacher or student
+        profile.role = self.cleaned_data["role"]
         profile.save()
         return user
-
-
+    
 # --- Login Form ---
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your username'
+        })
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your password'
+        })
     )
 
 
 # --- Profile Form ---
+from django import forms
+from .models import Profile
+
+from django import forms
+from django.forms.widgets import ClearableFileInput
+from .models import Profile
+
 class ProfileForm(forms.ModelForm):
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your email address'
+        })
     )
 
     class Meta:
         model = Profile
         fields = ['phone', 'bio', 'avatar', 'email']
+        widgets = {
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your phone number'
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Write a short bio about yourself'
+            }),
+            # ✅ Use ClearableFileInput instead of FileInput
+            'avatar': ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -82,5 +128,24 @@ class ProfileForm(forms.ModelForm):
                 profile.save()
         return profile
 
+
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username']   # ✅ only username
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter username'
+            }),
+        }
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['role']   # ✅ only role
+        widgets = {
+            'role': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 

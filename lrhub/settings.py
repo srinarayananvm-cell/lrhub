@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'accounts.middleware.BlockAdminFromMainSiteMiddleware',   # keep this, blocks superusers
+    
 ]
 
 ROOT_URLCONF = 'lrhub.urls'

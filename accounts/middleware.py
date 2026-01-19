@@ -16,13 +16,4 @@ class CustomSessionMiddleware:
         response = self.get_response(request)
         return response
 
-class BlockAdminFromMainSiteMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
 
-    def __call__(self, request):
-        # If superuser tries to access non-admin URLs
-        if request.user.is_authenticated and request.user.is_superuser:
-            if not request.path.startswith(reverse('admin:index')):
-                return redirect('/admin/')  # force them back to admin
-        return self.get_response(request)
