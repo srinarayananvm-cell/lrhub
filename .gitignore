@@ -19,4 +19,5 @@ media/student_resources/*
 # Django fixtures (JSON backups)
 fixtures/*.json
 */fixtures/*.json
+.cache/
 

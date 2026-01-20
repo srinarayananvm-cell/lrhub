@@ -15,9 +15,14 @@ urlpatterns = [
     path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path("download/note/<int:note_id>/", views.download_note, name="download_note"),
     path("download/resource/<int:resource_id>/", views.download_student_resource, name="download_student_resource"),
+    path("analyze/note/<int:note_id>/", views.analyze_note, name="analyze_note"),
+    path("analyze/resource/<int:resource_id>/", views.analyze_resource, name="analyze_resource"),
+    path("analysis/note/<int:note_id>/", views.analysis_page_note, name="analysis_page_note"),
+    path("analysis/resource/<int:resource_id>/", views.analysis_page_resource, name="analysis_page_resource"),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/add/', views.add_user, name='add_user'),
     path('admin-dashboard/edit/<int:user_id>/', views.edit_user, name='edit_user'),
+
     path('password_reset/', CustomPasswordResetView.as_view(
         template_name='accounts/password_reset_form.html',
         subject_template_name='accounts/password_reset_subject.txt',

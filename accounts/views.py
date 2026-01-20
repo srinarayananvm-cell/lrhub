@@ -8,8 +8,9 @@ from .models import Profile
 from .forms import SignupForm, LoginForm, ProfileForm
 from resources.models import Note, StudentResource, Rating, Recommendation
 from resources.forms import NoteForm, StudentResourceForm, RatingForm, RecommendationForm
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from analytics.models import ActivityLog
+from .utils import extract_pdf_text, relevance_score
 from django.contrib.auth.decorators import user_passes_test
 
 # --- Auth Page (combined login/signup tabs) ---
@@ -438,6 +439,53 @@ def download_student_resource(request, resource_id):
 
     # ✅ stream file
     return FileResponse(resource.file.open(), as_attachment=True, filename=resource.file.name)
+# ✅ Analysis views 
+
+def analyze_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter is required"}, status=400)
+
+    try:
+        text = extract_pdf_text(note.file.path)
+        relevance = relevance_score(text, query)
+        suggestion = "related" if relevance >= 0.2 else "not related"
+
+        return JsonResponse({
+            "type": "Note",
+            "id": note_id,
+            "title": note.title,
+            "relevance_score": relevance,
+            "suggestion": suggestion
+        })
+    except Exception as e:
+        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
+
+
+def analyze_resource(request, resource_id):
+    resource = get_object_or_404(StudentResource, id=resource_id)
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter is required"}, status=400)
+
+    try:
+        text = extract_pdf_text(resource.file.path)
+        relevance = relevance_score(text, query)
+        suggestion = "related" if relevance >= 0.2 else "not related"
+
+        return JsonResponse({
+            "type": "StudentResource",
+            "id": resource_id,
+            "title": resource.title,
+            "relevance_score": relevance,
+            "suggestion": suggestion
+        })
+    except Exception as e:
+        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
+
 
 from rest_framework import generics
 from .serializers import SignupSerializer
@@ -446,14 +494,20 @@ class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
 
-from django.contrib.auth.decorators import user_passes_test
 
+from django.contrib.auth.decorators import user_passes_test
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
+from .forms import SignupForm, UserEditForm, ProfileEditForm
 
 # ✅ Only superusers can access
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
-    users = User.objects.all().select_related("profile")
-    return render(request, "accounts/admin_dashboard.html", {"users": users})
+    query = request.GET.get("q")
+    users = None
+    if query:
+        users = User.objects.filter(username__icontains=query).select_related("profile")
+    return render(request, "accounts/admin_dashboard.html", {"users": users, "query": query})
 
 @user_passes_test(lambda u: u.is_superuser)
 def add_user(request):
@@ -465,8 +519,6 @@ def add_user(request):
     else:
         form = SignupForm()
     return render(request, "accounts/add_user.html", {"form": form})
-
-from .forms import UserEditForm, ProfileEditForm
 
 @user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
@@ -482,4 +534,18 @@ def edit_user(request, user_id):
     else:
         form = UserEditForm(instance=user)
         profile_form = ProfileEditForm(instance=profile)
-    return render(request, "accounts/edit_user.html", {"form": form, "profile_form": profile_form})
+    return render(
+        request,
+        "accounts/edit_user.html",
+        {"form": form, "profile_form": profile_form, "user": user}
+    )
+
+
+def analysis_page_note(request, note_id):
+    note = Note.objects.get(id=note_id)
+    return render(request, "accounts/analysis_note.html", {"note": note})
+
+def analysis_page_resource(request, resource_id):
+    resource = StudentResource.objects.get(id=resource_id)
+    return render(request, "accounts/analysis_resource.html", {"resource": resource})
+

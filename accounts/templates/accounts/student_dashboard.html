@@ -157,6 +157,8 @@
               <a href="{% url 'download_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">
                 <i class="fas fa-download"></i> Download Notes
               </a>
+              <a href="{% url 'analysis_page_note' note.id %}" class="btn btn-sm btn-outline-success mt-2">Analyze Note</a>
+
 
               <!-- Rating Display -->
               <p class="mt-2">
@@ -283,6 +285,7 @@
               <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
                 <i class="fas fa-download"></i> Download Resource
               </a>
+              <a href="{% url 'analysis_page_resource' res.id %}" class="btn btn-sm btn-outline-success mt-2">Analyze Resource</a>
 
               <!-- Rating Display -->
               <p class="mt-2">
@@ -377,6 +380,8 @@
             <a href="{% url 'download_student_resource' res.id %}" class="btn btn-sm btn-outline-primary mt-2">
               <i class="fas fa-download"></i> Download Resource
             </a>
+
+
             <span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> Highly Rated</span>
           </div>
         </div>

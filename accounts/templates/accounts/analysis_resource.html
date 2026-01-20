@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'student_dashboard' %}">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'student_dashboard' %}#resources">Resources</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Analyze Resource: {{ resource.title }}
+            </li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Analyze Resource: {{ resource.title }}</h4>
+        </div>
+        <div class="card-body">
+            <!-- Topic input -->
+            <div class="mb-3">
+                <label for="queryInputRes" class="form-label fw-bold">Enter Topic</label>
+                <input type="text" id="queryInputRes" class="form-control" placeholder="Type a topic to analyze">
+            </div>
+
+            <!-- Analysis button -->
+            <button id="analyzeBtnRes" class="btn btn-success mb-3">🔍 Analyze</button>
+
+            <!-- Result area (shielded from auto-dismiss) -->
+            <div id="analysisResultRes" class="alert alert-secondary analysis-result">
+                Result will appear here...
+            </div>
+
+            <!-- Download button always visible -->
+            <a href="{% url 'download_student_resource' resource.id %}" class="btn btn-primary mt-2">
+                ⬇️ Download Resource
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Safe JSON injection -->
+{{ resource.id|json_script:"resourceId" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const resourceId = JSON.parse(document.getElementById("resourceId").textContent);
+    const analyzeBtn = document.getElementById("analyzeBtnRes");
+    const resultDiv = document.getElementById("analysisResultRes");
+
+    // Block Bootstrap auto-dismiss from closing this alert
+    resultDiv.addEventListener("close.bs.alert", function (event) {
+        if (resultDiv.classList.contains("analysis-result")) {
+            event.preventDefault(); // stop closing
+        }
+    });
+
+    analyzeBtn.addEventListener("click", function() {
+        const query = document.getElementById("queryInputRes").value.trim();
+
+        if (!query) {
+            resultDiv.className = "alert alert-danger analysis-result";
+            resultDiv.innerText = "❌ Please enter a topic before analyzing.";
+            return;
+        }
+
+        resultDiv.className = "alert alert-info analysis-result";
+        resultDiv.innerText = "⏳ Analyzing...";
+
+        fetch(`/api/accounts/analyze/resource/${resourceId}/?query=${encodeURIComponent(query)}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.json();
+            })
+            .then(data => {
+                resultDiv.className = "alert alert-success analysis-result";
+                resultDiv.innerText = `✅ Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
+            })
+            .catch(error => {
+                resultDiv.className = "alert alert-danger analysis-result";
+                resultDiv.innerText = "❌ Error during analysis. Please try again.";
+                console.error(error);
+            });
+    });
+});
+</script>
+{% endblock %}
