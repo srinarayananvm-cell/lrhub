@@ -55,9 +55,16 @@ class SignupForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-            
+
         profile, created = Profile.objects.get_or_create(user=user)
         profile.role = self.cleaned_data["role"]
+
+        # ✅ Teacher approval logic
+        if profile.role == "teacher":
+            profile.approved = False   # require admin approval
+        else:
+            profile.approved = True    # students/admins are auto-approved
+
         profile.save()
         return user
     

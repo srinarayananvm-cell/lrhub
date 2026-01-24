@@ -11,6 +11,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('auth/', views.auth_page, name='auth_page'),
     path('role-redirect/', views.role_redirect, name='role_redirect'),
+    path("pending-approval/", views.pending_approval, name="pending_approval"),
     path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
     path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path("download/note/<int:note_id>/", views.download_note, name="download_note"),
@@ -22,6 +23,11 @@ urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/add/', views.add_user, name='add_user'),
     path('admin-dashboard/edit/<int:user_id>/', views.edit_user, name='edit_user'),
+    path("admin-dashboard/approve/<int:user_id>/", views.approve_teacher, name="approve_teacher"),
+    path("delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
+    path("bulk-import/", views.bulk_import_users, name="bulk_import_users"),
+
+
 
     path('password_reset/', CustomPasswordResetView.as_view(
         template_name='accounts/password_reset_form.html',

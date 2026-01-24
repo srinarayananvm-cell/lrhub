@@ -7,8 +7,14 @@ from .models import Profile
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        # Do not force role here — let SignupForm.save() set it
-        Profile.objects.get_or_create(user=instance)
+        # 🚫 Skip superusers/staff from being treated as teachers
+        if instance.is_superuser or instance.is_staff:
+            Profile.objects.get_or_create(user=instance, defaults={
+                "role": "admin",
+                "approved": True
+            })
+        else:
+            Profile.objects.get_or_create(user=instance)
 
 # Delete file when Profile is deleted
 @receiver(post_delete, sender=Profile)

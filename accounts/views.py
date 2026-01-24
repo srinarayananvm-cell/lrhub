@@ -12,7 +12,7 @@ from django.http import FileResponse, JsonResponse
 from analytics.models import ActivityLog
 from .utils import extract_pdf_text, relevance_score
 from django.contrib.auth.decorators import user_passes_test
-
+import pandas as pd
 # --- Auth Page (combined login/signup tabs) ---
 def auth_page(request):
     signup_form = SignupForm()
@@ -21,41 +21,54 @@ def auth_page(request):
         'signup_form': signup_form,
         'login_form': login_form,
     })
-
-
 # --- Signup ---
 def signup_view(request):
     if request.method == 'POST':
         form = SignupForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)   # auto-login after signup
+            profile = user.profile
+
+            if profile.role == "teacher" and not profile.approved:
+                # 🚫 Do NOT log in teacher
+                messages.warning(request, "Your teacher account is awaiting admin approval before you can log in.")
+                return render(request, "accounts/pending_approval.html")
+
+            # ✅ Students/Admins: safe to auto-login
+            login(request, user)  # only one backend, no need to specify
             messages.success(request, "Signup successful! Welcome.")
-            return redirect('role_redirect')
+            return redirect("role_redirect")
     else:
         form = SignupForm()
-    return render(request, 'accounts/auth.html', {
-        'signup_form': form,
-        'login_form': LoginForm()
+    return render(request, "accounts/auth.html", {
+        "signup_form": form,
+        "login_form": LoginForm()
     })
-
-
-# --- Login ---
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
+            profile = getattr(user, "profile", None)
+
+            # 🚫 Block unapproved teachers before login
+            if profile and profile.role == "teacher" and not profile.approved:
+                messages.error(request, "Your teacher account is awaiting admin approval. You cannot log in yet.")
+                return render(request, "accounts/pending_approval.html")
+
+            # ✅ Safe to log in students/admins/approved teachers
+            login(request, user)  # only one backend now
             messages.success(request, "Login successful!")
-            return redirect('role_redirect')
+            return redirect("role_redirect")
     else:
         form = LoginForm()
-    return render(request, 'accounts/auth.html', {
-        'login_form': form,
-        'signup_form': SignupForm()
-    })
 
+    return render(request, "accounts/auth.html", {
+        "login_form": form,
+        "signup_form": SignupForm()
+    })
+def pending_approval(request):
+    return render(request, "accounts/pending_approval.html")
 
 # --- Logout ---
 def logout_view(request):
@@ -79,34 +92,6 @@ def role_redirect(request):
     else:
         messages.error(request, "Role not assigned. Contact admin.")
         return redirect('home')
-# --- Learners List ---
-def learners_only(request):
-    users = User.objects.filter(is_staff=False, is_superuser=False)
-    return render(request, 'accounts/users_list.html', {'users': users})
-
-def learners_list(request):
-    learners = Profile.objects.filter(role='student')
-    return render(request, 'accounts/learners_list.html', {'learners': learners})
-
-
-# --- Profile ---
-@login_required
-def profile_view(request):
-    profile, _ = Profile.objects.get_or_create(user=request.user)
-    return render(request, 'accounts/profile.html', {'profile': profile})
-
-@login_required
-def edit_profile(request):
-    profile, _ = Profile.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
-        if form.is_valid():
-            form.save(user=request.user)
-            messages.success(request, "Profile updated successfully!")
-            return redirect('profile')
-    else:
-        form = ProfileForm(instance=profile, user=request.user)
-    return render(request, 'accounts/edit_profile.html', {'form': form})
 
 @login_required
 def teacher_dashboard(request):
@@ -121,6 +106,8 @@ def teacher_dashboard(request):
     if profile.role != 'teacher':
         messages.error(request, "Only teachers can access this dashboard.")
         return redirect('home')
+    if not profile.approved: 
+        return render(request, "accounts/pending_approval.html") 
 
     # Profile edit
     if request.method == 'POST' and 'edit_profile' in request.POST:
@@ -514,7 +501,8 @@ def add_user(request):
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            messages.success(request, f"User {user.username} has been created successfully.")
             return redirect("admin_dashboard")
     else:
         form = SignupForm()
@@ -530,6 +518,7 @@ def edit_user(request, user_id):
         if form.is_valid() and profile_form.is_valid():
             form.save()
             profile_form.save()
+            messages.success(request, f"User {user.username} has been updated successfully.")
             return redirect("admin_dashboard")
     else:
         form = UserEditForm(instance=user)
@@ -540,6 +529,88 @@ def edit_user(request, user_id):
         {"form": form, "profile_form": profile_form, "user": user}
     )
 
+@user_passes_test(lambda u: u.is_superuser)
+def approve_teacher(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = user.profile
+    if profile.role == "teacher":
+        profile.approved = True
+        profile.save()
+        messages.success(request, f"Teacher {user.username} has been approved.")
+    return redirect("admin_dashboard")
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    username = user.username
+    user.delete()
+    messages.success(request, f"User {username} has been deleted successfully.")
+    return redirect("admin_dashboard")
+
+@user_passes_test(lambda u: u.is_superuser)
+def bulk_import_users(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        file = request.FILES["file"]
+
+        try:
+            # Pandas auto-detects CSV vs Excel
+            df = pd.read_excel(file) if file.name.endswith(".xlsx") else pd.read_csv(file)
+
+            created_count = 0
+            skipped_count = 0
+            updated_count = 0
+
+            for _, row in df.iterrows():
+                username = str(row.get("username")).strip()
+                email = str(row.get("email")).strip()
+                role = str(row.get("role", "student")).strip().lower()
+                approved = str(row.get("approved", "False")).strip().lower() in ["true", "1", "yes"]
+                password1 = str(row.get("password1", "")).strip()
+                password2 = str(row.get("password2", "")).strip()
+
+                # 🚫 Skip if passwords don’t match or empty
+                if password1 != password2 or not password1:
+                    skipped_count += 1
+                    continue
+
+                user = User.objects.filter(username=username).first()
+
+                if user:
+                    # ✅ Update existing user
+                    user.email = email
+                    user.set_password(password1)
+                    user.save()
+
+                    # ✅ Update profile created by signal
+                    if hasattr(user, "profile"):
+                        user.profile.role = role
+                        user.profile.approved = approved
+                        user.profile.save()
+                    updated_count += 1
+                else:
+                    # ✅ Create new user (signal will auto-create profile)
+                    user = User(username=username, email=email)
+                    user.set_password(password1)
+                    user.save()
+
+                    # ✅ Update profile created by signal
+                    if hasattr(user, "profile"):
+                        user.profile.role = role
+                        user.profile.approved = approved
+                        user.profile.save()
+                    created_count += 1
+
+            messages.success(
+                request,
+                f"{created_count} users created, {updated_count} updated, {skipped_count} skipped."
+            )
+        except Exception as e:
+            messages.error(request, f"Import failed: {e}")
+
+        return redirect("admin_dashboard")
+
+    return render(request, "accounts/bulk_import.html")
+
 
 def analysis_page_note(request, note_id):
     note = Note.objects.get(id=note_id)
@@ -548,4 +619,3 @@ def analysis_page_note(request, note_id):
 def analysis_page_resource(request, resource_id):
     resource = StudentResource.objects.get(id=resource_id)
     return render(request, "accounts/analysis_resource.html", {"resource": resource})
-
