@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-  /* Animated gradient background */
+  /* Full-page animated gradient background */
   body {
-    background: linear-gradient(-45deg, #f0f4ff, #e6f7ff, #d6faff, #f9f9ff);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
     background-size: 400% 400%;
-    animation: gradientBG 12s ease infinite;
+    animation: gradientBG 15s ease infinite;
+    font-family: 'Poppins', sans-serif;
   }
   @keyframes gradientBG {
     0% {background-position: 0% 50%;}
@@ -13,45 +14,65 @@
     100% {background-position: 0% 50%;}
   }
 
+  /* Heading styling */
+  h1 {
+    font-weight: 700;
+    font-size: 2.5rem;
+    color: #333;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+  }
+  .lead {
+    font-size: 1.2rem;
+    color: #555;
+    margin-bottom: 30px;
+  }
+
   /* Card styling */
   .card {
     transition: transform 0.4s ease, box-shadow 0.4s ease;
-    border-radius: 15px;
+    border-radius: 20px;
     border: none;
     background: #fff;
+    padding: 25px;
+    height: 100%;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   }
   .card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+    transform: translateY(-12px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
   }
 
-  /* Button animation */
+  /* Button styling */
   .btn {
     transition: all 0.3s ease;
-    border-radius: 25px;
-    font-weight: 500;
+    border-radius: 30px;
+    font-weight: 600;
+    padding: 10px 20px;
+    letter-spacing: 0.5px;
   }
   .btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
   }
 
   /* Slide-in animations */
   .slide-in-left { animation: slideInLeft 1s forwards; opacity: 0; }
   .slide-in-right { animation: slideInRight 1s forwards; opacity: 0; }
   .slide-in-up { animation: slideInUp 1s forwards; opacity: 0; }
-  @keyframes slideInLeft { from {transform: translateX(-50px); opacity:0;} to {transform: translateX(0); opacity:1;} }
-  @keyframes slideInRight { from {transform: translateX(50px); opacity:0;} to {transform: translateX(0); opacity:1;} }
-  @keyframes slideInUp { from {transform: translateY(50px); opacity:0;} to {transform: translateY(0); opacity:1;} }
+  @keyframes slideInLeft { from {transform: translateX(-60px); opacity:0;} to {transform: translateX(0); opacity:1;} }
+  @keyframes slideInRight { from {transform: translateX(60px); opacity:0;} to {transform: translateX(0); opacity:1;} }
+  @keyframes slideInUp { from {transform: translateY(60px); opacity:0;} to {transform: translateY(0); opacity:1;} }
 
-  /* Icon inline style */
+  /* Icon + title styling */
   .card h4 {
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 15px;
   }
   .card h4 span {
-    margin-right: 8px;
-    font-size: 1.5rem;
+    margin-right: 10px;
+    font-size: 1.6rem;
   }
 </style>
 
@@ -59,10 +80,10 @@
   <h1 class="mb-3">✨ Welcome to ArivuVerse! ✨</h1>
   <p class="lead">"A Universe of Knowledge, Shared and Learned Together"</p>
 
-  <div class="row mt-4">
+  <div class="row mt-4 g-4">
     {% if not user.is_authenticated %}
     <div class="col-md-3 slide-in-left" style="animation-delay:0.2s">
-      <div class="card p-3">
+      <div class="card">
         <h4><span>👤</span>Accounts</h4>
         <p>Sign up, log in, and manage your profile.</p>
         <a href="{% url 'auth_page' %}" class="btn btn-primary">Get Started</a>
@@ -71,7 +92,7 @@
     {% endif %}
 
     <div class="col-md-3 slide-in-up" style="animation-delay:0.4s">
-      <div class="card p-3">
+      <div class="card">
         <h4><span>📚</span>Resources</h4>
         <p>Upload and explore learning materials.</p>
         <a href="{% url 'resources_home' %}" class="btn btn-success">Explore</a>
@@ -79,15 +100,15 @@
     </div>
 
     <div class="col-md-3 slide-in-up" style="animation-delay:0.6s">
-      <div class="card p-3">
+      <div class="card">
         <h4><span>🤝</span>Collaboration</h4>
-        <p>Connect and share ideas with peers and grow</p>
+        <p>Connect and share ideas with peers and grow.</p>
         <a href="{% url 'collaboration_home' %}" class="btn btn-warning">Collaborate</a>
       </div>
     </div>
 
     <div class="col-md-3 slide-in-right" style="animation-delay:0.8s">
-      <div class="card p-3">
+      <div class="card">
         <h4><span>📊</span>Analytics</h4>
         <p>Track usage and performance insights.</p>
         <a href="{% url 'analytics_home' %}" class="btn btn-info">View Stats</a>

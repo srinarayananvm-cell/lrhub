@@ -450,7 +450,6 @@ def analyze_note(request, note_id):
     except Exception as e:
         return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
 
-
 def analyze_resource(request, resource_id):
     resource = get_object_or_404(StudentResource, id=resource_id)
     query = request.GET.get("query", "").strip()
@@ -472,21 +471,17 @@ def analyze_resource(request, resource_id):
         })
     except Exception as e:
         return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
-
-
+    
 from rest_framework import generics
 from .serializers import SignupSerializer
 
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
-
-
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from .forms import SignupForm, UserEditForm, ProfileEditForm
-
 # ✅ Only superusers can access
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
@@ -495,7 +490,6 @@ def admin_dashboard(request):
     if query:
         users = User.objects.filter(username__icontains=query).select_related("profile")
     return render(request, "accounts/admin_dashboard.html", {"users": users, "query": query})
-
 @user_passes_test(lambda u: u.is_superuser)
 def add_user(request):
     if request.method == "POST":
@@ -507,7 +501,6 @@ def add_user(request):
     else:
         form = SignupForm()
     return render(request, "accounts/add_user.html", {"form": form})
-
 @user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -528,17 +521,18 @@ def edit_user(request, user_id):
         "accounts/edit_user.html",
         {"form": form, "profile_form": profile_form, "user": user}
     )
-
 @user_passes_test(lambda u: u.is_superuser)
 def approve_teacher(request, user_id):
     user = get_object_or_404(User, id=user_id)
     profile = user.profile
+
     if profile.role == "teacher":
         profile.approved = True
         profile.save()
         messages.success(request, f"Teacher {user.username} has been approved.")
-    return redirect("admin_dashboard")
 
+    # ✅ Redirect back to pending requests page
+    return redirect("pending_requests")
 @user_passes_test(lambda u: u.is_superuser)
 def delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -611,7 +605,6 @@ def bulk_import_users(request):
 
     return render(request, "accounts/bulk_import.html")
 
-
 def analysis_page_note(request, note_id):
     note = Note.objects.get(id=note_id)
     return render(request, "accounts/analysis_note.html", {"note": note})
@@ -619,3 +612,10 @@ def analysis_page_note(request, note_id):
 def analysis_page_resource(request, resource_id):
     resource = StudentResource.objects.get(id=resource_id)
     return render(request, "accounts/analysis_resource.html", {"resource": resource})
+
+def pending_requests(request):
+    # Only teachers who are not approved yet
+    pending_teachers = Profile.objects.filter(role="teacher", approved=False)
+    return render(request, "accounts/pending_requests.html", {
+        "pending_teachers": pending_teachers
+    })

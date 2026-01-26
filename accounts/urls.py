@@ -23,9 +23,10 @@ urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/add/', views.add_user, name='add_user'),
     path('admin-dashboard/edit/<int:user_id>/', views.edit_user, name='edit_user'),
-    path("admin-dashboard/approve/<int:user_id>/", views.approve_teacher, name="approve_teacher"),
+    path("admin_dashboard/approve/<int:user_id>/", views.approve_teacher, name="approve_teacher"),
     path("delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
     path("bulk-import/", views.bulk_import_users, name="bulk_import_users"),
+    path("admin_dashboard/pending/", views.pending_requests, name="pending_requests"),
 
 
 

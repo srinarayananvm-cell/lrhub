@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Add Bulk Users
+      </li>
+    </ol>
+  </nav>
   <h3><i class="fas fa-file-import me-2"></i> Bulk Import Users</h3>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}

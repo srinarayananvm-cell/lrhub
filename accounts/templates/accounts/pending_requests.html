@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Add Bulk Users
+      </li>
+    </ol>
+  </nav>
+  <div class="card shadow-lg border-0 rounded-3">
+    <div class="card-header text-white" style="background: linear-gradient(90deg, #0d6efd, #1e40af);">
+      <h4><i class="fas fa-user-clock me-2"></i> Pending Teacher Requests</h4>
+    </div>
+    <div class="card-body">
+      {% if pending_teachers %}
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Bio</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for teacher in pending_teachers %}
+              <tr>
+                <td>{{ teacher.user.username }}</td>
+                <td>{{ teacher.user.email }}</td>
+                <td>{{ teacher.phone }}</td>
+                <td>{{ teacher.bio }}</td>
+                <td>
+                  <form method="post" action="{% url 'approve_teacher' teacher.user.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                      <i class="fas fa-check"></i> Approve
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">No pending teacher requests at the moment.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

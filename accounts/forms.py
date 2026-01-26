@@ -21,10 +21,8 @@ class SignupForm(forms.ModelForm):
         })
     )
     role = forms.ChoiceField(
-        choices=Profile.ROLE_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        }),
+        choices=[c for c in Profile.ROLE_CHOICES if c[0] != "admin"],  # ✅ hide admin
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label="Role"
     )
 
@@ -41,8 +39,7 @@ class SignupForm(forms.ModelForm):
                 'placeholder': 'Enter your email address'
             }),
         }
-        help_texts = { 'username': None,
-        }
+        help_texts = {'username': None}
 
     def clean_password2(self):
         if self.cleaned_data.get("password1") != self.cleaned_data.get("password2"):
@@ -57,16 +54,23 @@ class SignupForm(forms.ModelForm):
             user.save()
 
         profile, created = Profile.objects.get_or_create(user=user)
-        profile.role = self.cleaned_data["role"]
+        role = self.cleaned_data.get("role", "student")
+
+        # ✅ Prevent tampering: force student if someone tries "admin"
+        if role == "admin":
+            role = "student"
+
+        profile.role = role
 
         # ✅ Teacher approval logic
         if profile.role == "teacher":
             profile.approved = False   # require admin approval
         else:
-            profile.approved = True    # students/admins are auto-approved
+            profile.approved = True    # students auto-approved
 
         profile.save()
         return user
+
     
 # --- Login Form ---
 class LoginForm(AuthenticationForm):

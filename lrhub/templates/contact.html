@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-lg border-0 rounded-3">
+    <div class="card-header text-white text-center" style="background: linear-gradient(90deg, #0d6efd, #1e40af);">
+      <h2><i class="fas fa-envelope me-2"></i> Contact Us</h2>
+    </div>
+    <div class="card-body p-4">
+      <p class="lead">We’d love to hear from you!</p>
+      <p>If you have questions, feedback, or need support, reach out to us:</p>
+      <ul class="list-unstyled">
+        <li><i class="fas fa-envelope text-primary me-2"></i> Email: <a href="mailto:support@arivuverse.com">support@arivuverse.com</a></li>
+        <li><i class="fas fa-phone text-primary me-2"></i> Phone: +91 9445998380</li>
+        <li><i class="fas fa-map-marker-alt text-primary me-2"></i> Address: Madurai, Tamil Nadu, India</li>
+      </ul>
+      <hr>
+      <form method="post" action="#">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-control" placeholder="Enter your name">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Your Email</label>
+          <input type="email" class="form-control" placeholder="Enter your email">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Message</label>
+          <textarea class="form-control" rows="4" placeholder="Write your message"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+          <i class="fas fa-paper-plane"></i> Send Message
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

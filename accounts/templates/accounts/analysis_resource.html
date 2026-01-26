@@ -77,8 +77,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 return response.json();
             })
             .then(data => {
-                resultDiv.className = "alert alert-success analysis-result";
-                resultDiv.innerText = `✅ Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
+                resultDiv.className = "alert analysis-result";
+                resultDiv.innerText = `Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
             })
             .catch(error => {
                 resultDiv.className = "alert alert-danger analysis-result";
