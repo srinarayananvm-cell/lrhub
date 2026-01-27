@@ -30,12 +30,18 @@
             <!-- Analysis button -->
             <button id="analyzeBtnRes" class="btn btn-success mb-3">🔍 Analyze</button>
 
-            <!-- Result area (shielded from auto-dismiss) -->
+            <!-- Result area -->
             <div id="analysisResultRes" class="alert alert-secondary analysis-result">
                 Result will appear here...
             </div>
 
-            <!-- Download button always visible -->
+            <!-- ✅ Summarize button -->
+            <button id="summarizeBtnRes" class="btn btn-info mb-3">📝 Summarize Resource</button>
+            <div id="summaryResultRes" class="alert alert-secondary mt-2">
+                Summary will appear here...
+            </div>
+
+            <!-- Download button -->
             <a href="{% url 'download_student_resource' resource.id %}" class="btn btn-primary mt-2">
                 ⬇️ Download Resource
             </a>
@@ -43,7 +49,7 @@
     </div>
 </div>
 
-<!-- ✅ Safe JSON injection -->
+<!-- Safe JSON injection -->
 {{ resource.id|json_script:"resourceId" }}
 
 <script>
@@ -51,38 +57,63 @@ document.addEventListener("DOMContentLoaded", function() {
     const resourceId = JSON.parse(document.getElementById("resourceId").textContent);
     const analyzeBtn = document.getElementById("analyzeBtnRes");
     const resultDiv = document.getElementById("analysisResultRes");
+    const summarizeBtn = document.getElementById("summarizeBtnRes");
+    const summaryDiv = document.getElementById("summaryResultRes");
 
-    // Block Bootstrap auto-dismiss from closing this alert
+    // ✅ Prevent auto-dismiss for analysis alert
     resultDiv.addEventListener("close.bs.alert", function (event) {
         if (resultDiv.classList.contains("analysis-result")) {
-            event.preventDefault(); // stop closing
+            event.preventDefault();
         }
     });
 
+    // ✅ Prevent auto-dismiss for summary alert
+    summaryDiv.addEventListener("close.bs.alert", function (event) {
+        event.preventDefault();
+    });
+
+    // Analyze button logic
     analyzeBtn.addEventListener("click", function() {
         const query = document.getElementById("queryInputRes").value.trim();
-
         if (!query) {
             resultDiv.className = "alert alert-danger analysis-result";
             resultDiv.innerText = "❌ Please enter a topic before analyzing.";
             return;
         }
-
         resultDiv.className = "alert alert-info analysis-result";
         resultDiv.innerText = "⏳ Analyzing...";
-
         fetch(`/api/accounts/analyze/resource/${resourceId}/?query=${encodeURIComponent(query)}`)
             .then(response => {
                 if (!response.ok) throw new Error("Network response was not ok");
                 return response.json();
             })
             .then(data => {
-                resultDiv.className = "alert analysis-result";
+                resultDiv.className = "alert alert-success analysis-result";
                 resultDiv.innerText = `Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
             })
             .catch(error => {
                 resultDiv.className = "alert alert-danger analysis-result";
                 resultDiv.innerText = "❌ Error during analysis. Please try again.";
+                console.error(error);
+            });
+    });
+
+    // Summarize button logic
+    summarizeBtn.addEventListener("click", function() {
+        summaryDiv.className = "alert alert-info";
+        summaryDiv.innerText = "⏳ Summarizing...";
+        fetch(`/resources/pdf/resource/${resourceId}/summarize/`)
+            .then(response => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.json();
+            })
+            .then(data => {
+                summaryDiv.className = "alert alert-success";
+                summaryDiv.innerText = data.summary;
+            })
+            .catch(error => {
+                summaryDiv.className = "alert alert-danger";
+                summaryDiv.innerText = "❌ Error generating summary.";
                 console.error(error);
             });
     });

@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+#suggestions {
+  z-index: 1050; /* higher than Bootstrap modals and list items */
+  max-height: 250px; /* optional: limit height */
+  overflow-y: auto;  /* optional: scroll if too many suggestions */
+}
+</style>
 <div class="container mt-4">
-  <h2>Resources Module</h2>
-  <p>Upload and explore learning materials here.</p>
+  <h2>Explore Notes & Resources</h2>
+  <p>Search your required learning materials here.</p>
 
   <!-- Dashboard button: show only if logged in -->
   {% if user.is_authenticated %}
@@ -16,19 +23,22 @@
       </a>
     {% elif user.profile.role == "admin" %}
       <a href="{% url 'admin_dashboard' %}" class="btn btn-success mb-3">
-        <i class="fas fa-user-graduate"></i> Go to Admin Dashboard
+        <i class="fas fa-user-shield"></i> Go to Admin Dashboard
       </a>
     {% endif %}
   {% endif %}
 
-  <!-- Search Resources (always visible) -->
+  <!-- Search Resources -->
   <h4>Search Resources</h4>
-  <form method="get" class="row g-2 mb-3">
-    <div class="col-md-6">
-      <input type="text" name="q" value="{{ query }}" placeholder="Search by title or topic" class="form-control">
+  <form method="get" class="row g-2 mb-3 position-relative">
+    <div class="col-md-6 position-relative">
+      <input type="text" id="searchBox" name="q" value="{{ query }}" 
+             placeholder="Search by title or topic" class="form-control">
+      <!-- AI Recommendations dropdown -->
+      <div id="suggestions" class="list-group position-absolute w-100"></div>
     </div>
     <div class="col-md-4">
-      <select name="filter" class="form-select">
+      <select name="filter" class="form-select" id="filterSelect">
         <option value="">All</option>
         <option value="notes" {% if filter == 'notes' %}selected{% endif %}>Educators Notes</option>
         <option value="resources" {% if filter == 'resources' %}selected{% endif %}>Learners Resources</option>
@@ -40,9 +50,9 @@
     </div>
   </form>
 
-  <!-- Results -->
-  {% if results %}
-    <ul class="list-group">
+  <!-- Results container -->
+  <ul id="resultsBox" class="list-group">
+    {% if results %}
       {% for item in results %}
         <li class="list-group-item">
           <strong>{{ item.title }}</strong><br>
@@ -59,9 +69,55 @@
           {% endif %}
         </li>
       {% endfor %}
-    </ul>
-  {% elif query %}
-    <p>No resources or notes found for your search.</p>
-  {% endif %}
+    {% elif query %}
+      <p>No resources or notes found for your search.</p>
+    {% endif %}
+  </ul>
 </div>
+
+<!-- AI Recommendations Script -->
+<script>
+document.getElementById("searchBox").addEventListener("input", function() {
+  let q = this.value;
+  let filter = document.getElementById("filterSelect").value;
+  if (q.length < 2) {
+    document.getElementById("suggestions").innerHTML = "";
+    return;
+  }
+  fetch(`/resources/search_recommendations/?q=${q}&filter=${filter}`)
+    .then(res => res.json())
+    .then(data => {
+      let box = document.getElementById("suggestions");
+      box.innerHTML = "";
+      data.recommendations.forEach(item => {
+        let el = document.createElement("a");
+        el.className = "list-group-item list-group-item-action";
+        el.textContent = item.title;
+        el.href = "#"; // prevent navigation
+        el.onclick = function(e) {
+          e.preventDefault();
+          // Replace results list with chosen item
+          let resultsBox = document.getElementById("resultsBox");
+          resultsBox.innerHTML = `
+            <li class="list-group-item">
+              <strong>${item.title}</strong><br>
+              ${item.topic ? "Topic: " + item.topic + "<br>" : ""}
+              ${item.description ? item.description + "<br>" : ""}
+              Uploaded by: ${item.uploaded_by}<br>
+              {% if user.is_authenticated %}
+                <a href="${item.file_url}" class="btn btn-sm btn-outline-primary mt-2">Download</a>
+              {% else %}
+                <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
+                  Sign up as Learner to Download
+                </a>
+              {% endif %}
+            </li>
+          `;
+          box.innerHTML = ""; // clear dropdown after selection
+        };
+        box.appendChild(el);
+      });
+    });
+});
+</script>
 {% endblock %}

@@ -30,12 +30,18 @@
             <!-- Analysis button -->
             <button id="analyzeBtn" class="btn btn-success mb-3">🔍 Analyze</button>
 
-            <!-- Result area (shielded from auto-dismiss) -->
+            <!-- Result area -->
             <div id="analysisResult" class="alert alert-secondary analysis-result">
                 Result will appear here...
             </div>
 
-            <!-- Download button always visible -->
+            <!-- ✅ Summarize button -->
+            <button id="summarizeBtn" class="btn btn-info mb-3">📝 Summarize Note</button>
+            <div id="summaryResult" class="alert alert-secondary mt-2">
+                Summary will appear here...
+            </div>
+
+            <!-- Download button -->
             <a href="{% url 'download_note' note.id %}" class="btn btn-primary mt-2">
                 ⬇️ Download Note
             </a>
@@ -43,7 +49,7 @@
     </div>
 </div>
 
-<!-- ✅ Safe JSON injection -->
+<!-- Safe JSON injection -->
 {{ note.id|json_script:"noteId" }}
 
 <script>
@@ -51,39 +57,54 @@ document.addEventListener("DOMContentLoaded", function() {
     const noteId = JSON.parse(document.getElementById("noteId").textContent);
     const analyzeBtn = document.getElementById("analyzeBtn");
     const resultDiv = document.getElementById("analysisResult");
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    const summaryDiv = document.getElementById("summaryResult");
 
-    // Block Bootstrap auto-dismiss from closing this alert
+    // Prevent auto-dismiss for analysis alert
     resultDiv.addEventListener("close.bs.alert", function (event) {
         if (resultDiv.classList.contains("analysis-result")) {
-            event.preventDefault(); // stop closing
+            event.preventDefault();
         }
+    });
+
+    // Prevent auto-dismiss for summary alert
+    summaryDiv.addEventListener("close.bs.alert", function (event) {
+        event.preventDefault();
     });
 
     analyzeBtn.addEventListener("click", function() {
         const query = document.getElementById("queryInput").value.trim();
-
         if (!query) {
             resultDiv.className = "alert alert-danger analysis-result";
             resultDiv.innerText = "❌ Please enter a topic before analyzing.";
             return;
         }
-
         resultDiv.className = "alert alert-info analysis-result";
         resultDiv.innerText = "⏳ Analyzing...";
-
         fetch(`/api/accounts/analyze/note/${noteId}/?query=${encodeURIComponent(query)}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Network response was not ok");
-                return response.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                resultDiv.className = "alert analysis-result";
+                resultDiv.className = "alert alert-success analysis-result";
                 resultDiv.innerText = `Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
             })
-            .catch(error => {
+            .catch(() => {
                 resultDiv.className = "alert alert-danger analysis-result";
                 resultDiv.innerText = "❌ Error during analysis. Please try again.";
-                console.error(error);
+            });
+    });
+
+    summarizeBtn.addEventListener("click", function() {
+        summaryDiv.className = "alert alert-info";
+        summaryDiv.innerText = "⏳ Summarizing...";
+        fetch(`/resources/pdf/note/${noteId}/summarize/`)
+            .then(res => res.json())
+            .then(data => {
+                summaryDiv.className = "alert alert-success";
+                summaryDiv.innerText = data.summary;
+            })
+            .catch(() => {
+                summaryDiv.className = "alert alert-danger";
+                summaryDiv.innerText = "❌ Error generating summary.";
             });
     });
 });
