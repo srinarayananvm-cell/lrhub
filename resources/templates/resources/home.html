@@ -2,40 +2,52 @@
 {% block content %}
 <style>
 #suggestions {
-  z-index: 1050; /* higher than Bootstrap modals and list items */
-  max-height: 250px; /* optional: limit height */
-  overflow-y: auto;  /* optional: scroll if too many suggestions */
+  z-index: 1050;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.accordion-button::after {
+  font-family: "Font Awesome 5 Free";
+  content: "\f078"; /* chevron-down */
+  font-weight: 900;
 }
 </style>
-<div class="container mt-4">
-  <h2>Explore Notes & Resources</h2>
-  <p>Search your required learning materials here.</p>
 
-  <!-- Dashboard button: show only if logged in -->
+<div class="container mt-4">
+  <h2 class="text-primary mb-3">
+    <i class="fas fa-book-open"></i> Explore Notes & Resources
+  </h2>
+  <p class="text-muted">Search your required learning materials here.</p>
+
+  <!-- Dashboard button -->
   {% if user.is_authenticated %}
-    {% if user.profile.role == "teacher" %}
-      <a href="{% url 'teacher_dashboard' %}" class="btn btn-primary mb-3">
-        <i class="fas fa-chalkboard-teacher"></i> Go to Teacher Dashboard
-      </a>
-    {% elif user.profile.role == "student" %}
-      <a href="{% url 'student_dashboard' %}" class="btn btn-success mb-3">
-        <i class="fas fa-user-graduate"></i> Go to Student Dashboard
-      </a>
-    {% elif user.profile.role == "admin" %}
-      <a href="{% url 'admin_dashboard' %}" class="btn btn-success mb-3">
-        <i class="fas fa-user-shield"></i> Go to Admin Dashboard
-      </a>
-    {% endif %}
+    <div class="mb-3">
+      {% if user.profile.role == "teacher" %}
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-primary">
+          <i class="fas fa-chalkboard-teacher"></i> Teacher Dashboard
+        </a>
+      {% elif user.profile.role == "student" %}
+        <a href="{% url 'student_dashboard' %}" class="btn btn-outline-success">
+          <i class="fas fa-user-graduate"></i> Student Dashboard
+        </a>
+      {% elif user.profile.role == "admin" %}
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-warning">
+          <i class="fas fa-user-shield"></i> Admin Dashboard
+        </a>
+      {% endif %}
+    </div>
   {% endif %}
 
-  <!-- Search Resources -->
-  <h4>Search Resources</h4>
-  <form method="get" class="row g-2 mb-3 position-relative">
+  <!-- Search -->
+  <h4 class="mt-4"><i class="fas fa-search"></i> Search Resources</h4>
+  <form method="get" class="row g-2 mb-4 position-relative">
     <div class="col-md-6 position-relative">
-      <input type="text" id="searchBox" name="q" value="{{ query }}" 
-             placeholder="Search by title or topic" class="form-control">
-      <!-- AI Recommendations dropdown -->
-      <div id="suggestions" class="list-group position-absolute w-100"></div>
+      <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-search"></i></span>
+        <input type="text" id="searchBox" name="q" value="{{ query }}" 
+               placeholder="Search by title or topic" class="form-control">
+      </div>
+      <div id="suggestions" class="list-group position-absolute w-100 shadow-sm"></div>
     </div>
     <div class="col-md-4">
       <select name="filter" class="form-select" id="filterSelect">
@@ -44,35 +56,84 @@
         <option value="resources" {% if filter == 'resources' %}selected{% endif %}>Learners Resources</option>
       </select>
     </div>
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-primary me-3">Search</button>
-      <a href="{% url 'resources_home' %}" class="btn btn-secondary me-3">Clear</a>
+    <div class="col-md-2 d-flex">
+      <button type="submit" class="btn btn-primary me-2">
+        <i class="fas fa-search"></i> Search
+      </button>
+      <a href="{% url 'resources_home' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Clear
+      </a>
     </div>
   </form>
 
-  <!-- Results container -->
-  <ul id="resultsBox" class="list-group">
-    {% if results %}
-      {% for item in results %}
-        <li class="list-group-item">
-          <strong>{{ item.title }}</strong><br>
-          {% if item.topic %}Topic: {{ item.topic }}<br>{% endif %}
-          {% if item.description %}{{ item.description }}<br>{% endif %}
-          Uploaded by: {{ item.uploaded_by.username }}<br>
+  <!-- Results List (only after search) -->
+  {% if query %}
+    <h5><i class="fas fa-list text-info"></i> Search Results</h5>
+    <ul id="resultsBox" class="list-group shadow-sm">
+      {% if results %}
+        {% for item in results %}
+          <li class="list-group-item">
+            <i class="fas fa-file-alt text-primary"></i> <strong>{{ item.title }}</strong><br>
+            {% if item.topic %}<i class="fas fa-book"></i> Topic: {{ item.topic }}<br>{% endif %}
+            {% if item.description %}<i class="fas fa-align-left"></i> {{ item.description }}<br>{% endif %}
+            <i class="fas fa-user"></i> Uploaded by: {{ item.uploaded_by.username }}<br>
+            {% if user.is_authenticated %}
+              <a href="{{ item.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-download"></i> Download
+              </a>
+            {% else %}
+              <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
+                <i class="fas fa-user-plus"></i> Sign up as Learner to Download
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      {% else %}
+        <p class="text-danger">No resources or notes found for your search.</p>
+      {% endif %}
+    </ul>
+  {% endif %}
 
-          {% if user.is_authenticated %}
-            <a href="{{ item.file.url }}" class="btn btn-sm btn-outline-primary mt-2">Download</a>
-          {% else %}
-            <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
-              Sign up as Learner to Download
-            </a>
-          {% endif %}
-        </li>
+  <!-- Categories Section -->
+  {% if categories %}
+    <h4 class="mt-5"><i class="fas fa-folder-open"></i> Browse by Category</h4>
+    <div class="accordion shadow-sm" id="categoryAccordion">
+      {% for category, items in categories.items %}
+        {% if items %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}">
+                <i class="fas fa-folder text-warning"></i> {{ category }}
+              </button>
+            </h2>
+            <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#categoryAccordion">
+              <div class="accordion-body">
+                <ul class="list-group">
+                  {% for item in items %}
+                    <li class="list-group-item">
+                      <i class="fas fa-file text-secondary"></i> <strong>{{ item.title }}</strong>
+                      {% if item.topic %} <span class="badge bg-info ms-2">{{ item.topic }}</span>{% endif %}<br>
+                      {% if item.description %}<i class="fas fa-align-left"></i> {{ item.description }}<br>{% endif %}
+                      <i class="fas fa-user"></i> Uploaded by: {{ item.uploaded_by.username }}<br>
+                      {% if user.is_authenticated %}
+                        <a href="{{ item.file.url }}" class="btn btn-sm btn-outline-primary mt-2">
+                          <i class="fas fa-download"></i> Download
+                        </a>
+                      {% else %}
+                        <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
+                          <i class="fas fa-user-plus"></i> Sign up as Learner to Download
+                        </a>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% endif %}
       {% endfor %}
-    {% elif query %}
-      <p>No resources or notes found for your search.</p>
-    {% endif %}
-  </ul>
+    </div>
+  {% endif %}
 </div>
 
 <!-- AI Recommendations Script -->
@@ -92,28 +153,12 @@ document.getElementById("searchBox").addEventListener("input", function() {
       data.recommendations.forEach(item => {
         let el = document.createElement("a");
         el.className = "list-group-item list-group-item-action";
-        el.textContent = item.title;
-        el.href = "#"; // prevent navigation
+        el.innerHTML = `<i class="fas fa-lightbulb text-warning"></i> ${item.title}`;
+        el.href = "#";
         el.onclick = function(e) {
           e.preventDefault();
-          // Replace results list with chosen item
-          let resultsBox = document.getElementById("resultsBox");
-          resultsBox.innerHTML = `
-            <li class="list-group-item">
-              <strong>${item.title}</strong><br>
-              ${item.topic ? "Topic: " + item.topic + "<br>" : ""}
-              ${item.description ? item.description + "<br>" : ""}
-              Uploaded by: ${item.uploaded_by}<br>
-              {% if user.is_authenticated %}
-                <a href="${item.file_url}" class="btn btn-sm btn-outline-primary mt-2">Download</a>
-              {% else %}
-                <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-danger mt-2">
-                  Sign up as Learner to Download
-                </a>
-              {% endif %}
-            </li>
-          `;
-          box.innerHTML = ""; // clear dropdown after selection
+          document.getElementById("searchBox").value = item.title;
+          box.innerHTML = "";
         };
         box.appendChild(el);
       });

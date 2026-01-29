@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Q, Avg
 from .models import Profile
-from .forms import SignupForm, LoginForm, ProfileForm
+from .forms import SignupForm, LoginForm, ProfileForm, UserEditForm, ProfileEditForm
 from resources.models import Note, StudentResource, Rating, Recommendation
 from resources.forms import NoteForm, StudentResourceForm, RatingForm, RecommendationForm
 from django.http import FileResponse, JsonResponse
@@ -428,6 +428,7 @@ def download_student_resource(request, resource_id):
     return FileResponse(resource.file.open(), as_attachment=True, filename=resource.file.name)
 # ✅ Analysis views 
 
+@login_required
 def analyze_note(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     query = request.GET.get("query", "").strip()
@@ -437,19 +438,21 @@ def analyze_note(request, note_id):
 
     try:
         text = extract_pdf_text(note.file.path)
-        relevance = relevance_score(text, query)
-        suggestion = "related" if relevance >= 0.2 else "not related"
+        relevance = relevance_score(text, query)  # dict with score + match
+        suggestion = "related" if relevance["score"] >= 20 else "not related"
 
         return JsonResponse({
             "type": "Note",
             "id": note_id,
             "title": note.title,
-            "relevance_score": relevance,
+            "relevance_score": relevance["score"],
+            "best_match": relevance["match"],
             "suggestion": suggestion
         })
     except Exception as e:
         return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
 
+@login_required
 def analyze_resource(request, resource_id):
     resource = get_object_or_404(StudentResource, id=resource_id)
     query = request.GET.get("query", "").strip()
@@ -459,29 +462,29 @@ def analyze_resource(request, resource_id):
 
     try:
         text = extract_pdf_text(resource.file.path)
-        relevance = relevance_score(text, query)
-        suggestion = "related" if relevance >= 0.2 else "not related"
+        relevance = relevance_score(text, query)  # dict with score + match
+        suggestion = "related" if relevance["score"] >= 20 else "not related"
 
         return JsonResponse({
             "type": "StudentResource",
             "id": resource_id,
             "title": resource.title,
-            "relevance_score": relevance,
+            "relevance_score": relevance["score"],
+            "best_match": relevance["match"],
             "suggestion": suggestion
         })
     except Exception as e:
         return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
-    
+
 from rest_framework import generics
 from .serializers import SignupSerializer
 
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
+
 from django.contrib.auth.decorators import user_passes_test
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
-from .forms import SignupForm, UserEditForm, ProfileEditForm
+
 # ✅ Only superusers can access
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
@@ -607,11 +610,13 @@ def bulk_import_users(request):
 
 def analysis_page_note(request, note_id):
     note = Note.objects.get(id=note_id)
-    return render(request, "accounts/analysis_note.html", {"note": note})
+    query = request.GET.get("q", "")
+    return render(request, "accounts/analysis_note.html", {"note": note, "query": query})
 
 def analysis_page_resource(request, resource_id):
     resource = StudentResource.objects.get(id=resource_id)
-    return render(request, "accounts/analysis_resource.html", {"resource": resource})
+    query = request.GET.get("q", "")
+    return render(request, "accounts/analysis_resource.html", {"resource": resource, "query": query})
 
 def pending_requests(request):
     # Only teachers who are not approved yet

@@ -8,7 +8,7 @@
                 <a href="{% url 'student_dashboard' %}">Dashboard</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{% url 'student_dashboard' %}#notes">Notes</a>
+                <a href="{% url 'student_dashboard' %}?tab=notes{% if query %}&q={{ query }}{% endif %}">Notes</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
                 Analyze Note: {{ note.title }}
@@ -84,8 +84,13 @@ document.addEventListener("DOMContentLoaded", function() {
         fetch(`/api/accounts/analyze/note/${noteId}/?query=${encodeURIComponent(query)}`)
             .then(res => res.json())
             .then(data => {
-                resultDiv.className = "alert alert-success analysis-result";
-                resultDiv.innerText = `Score: ${data.relevance_score} | Suggestion: ${data.suggestion}`;
+                if (data.suggestion === "related") {
+                    resultDiv.className = "alert alert-success analysis-result";
+                    resultDiv.innerText = `✅ Related\nScore: ${data.relevance_score}\nBest Match: ${data.best_match}`;
+                } else {
+                    resultDiv.className = "alert alert-danger analysis-result";
+                    resultDiv.innerText = `❌ Not Related\nScore: ${data.relevance_score}\nBest Match: ${data.best_match}`;
+                }
             })
             .catch(() => {
                 resultDiv.className = "alert alert-danger analysis-result";

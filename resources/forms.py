@@ -1,12 +1,11 @@
 from django import forms
-
-from .models import Note, StudentResource, Rating, Recommendation
+from .models import Note, StudentResource, Rating, Recommendation, CATEGORY_CHOICES
 
 # --- Notes ---
 class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
-        fields = ['title', 'topic', 'version', 'file']
+        fields = ['title', 'topic', 'version', 'file', 'category']  # ✅ added category
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -23,6 +22,9 @@ class NoteForm(forms.ModelForm):
             'file': forms.FileInput(attrs={
                 'class': 'form-control'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }, choices=[('', 'Optional: Select a category')] + CATEGORY_CHOICES),
         }
 
     def clean_file(self):
@@ -38,7 +40,7 @@ class NoteForm(forms.ModelForm):
 class StudentResourceForm(forms.ModelForm):
     class Meta:
         model = StudentResource
-        fields = ['title', 'description', 'file']
+        fields = ['title', 'description', 'file', 'category']  # ✅ added category
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -52,6 +54,9 @@ class StudentResourceForm(forms.ModelForm):
             'file': forms.FileInput(attrs={
                 'class': 'form-control'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }, choices=[('', 'Optional: Select a category')] + CATEGORY_CHOICES),
         }
 
 

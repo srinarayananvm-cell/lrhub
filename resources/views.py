@@ -6,37 +6,44 @@ from rest_framework.response import Response
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import re
-
+from collections import defaultdict
 
 def resources_home(request):
     query = request.GET.get('q')
     filter_type = request.GET.get('filter')
-    results = []
+
+    notes = Note.objects.all()
+    resources = StudentResource.objects.all()
 
     if query:
         if filter_type == 'notes':
-            results = Note.objects.filter(
-                Q(title__icontains=query) | Q(topic__icontains=query)
-            )
+            notes = notes.filter(Q(title__icontains=query) | Q(topic__icontains=query))
+            resources = StudentResource.objects.none()
         elif filter_type == 'resources':
-            results = StudentResource.objects.filter(
-                Q(title__icontains=query) | Q(description__icontains=query)
-            )
+            resources = resources.filter(Q(title__icontains=query) | Q(description__icontains=query))
+            notes = Note.objects.none()
         else:
-            # Search across both
-            notes = Note.objects.filter(
-                Q(title__icontains=query) | Q(topic__icontains=query)
-            )
-            resources = StudentResource.objects.filter(
-                Q(title__icontains=query) | Q(description__icontains=query)
-            )
-            results = list(notes) + list(resources)
+            notes = notes.filter(Q(title__icontains=query) | Q(topic__icontains=query))
+            resources = resources.filter(Q(title__icontains=query) | Q(description__icontains=query))
+
+    # ✅ Build categories dictionary
+    categories = defaultdict(list)
+
+    for n in notes:
+        category = n.category or "Uncategorized"
+        categories[category].append(n)
+
+    for r in resources:
+        category = r.category or "Uncategorized"
+        categories[category].append(r)
 
     return render(request, 'resources/home.html', {
         'query': query,
         'filter': filter_type,
-        'results': results,
+        'results': list(notes) + list(resources),  # search results
+        'categories': dict(categories),            # categories always available
     })
+
 
 
 from django.db.models import Avg
@@ -153,4 +160,3 @@ def summarize_pdf(request, type, pk):
         summary = summarize_text(text, num_sentences=5, max_words=100)
 
     return Response({"summary": summary})
-

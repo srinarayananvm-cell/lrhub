@@ -11,12 +11,12 @@ class RecommendationInline(admin.TabularInline):
 
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
-    list_display = ('title', 'topic', 'version', 'uploaded_by', 'uploaded_at','downloads')
+    list_display = ('title', 'topic', 'version', 'uploaded_by', 'uploaded_at','downloads', 'category')
     inlines = [RatingInline, RecommendationInline]
 
 @admin.register(StudentResource)
 class StudentResourceAdmin(admin.ModelAdmin):
-    list_display = ('title', 'uploaded_by', 'uploaded_at','downloads')
+    list_display = ('title', 'uploaded_by', 'uploaded_at','downloads', 'category')
     inlines = [RatingInline, RecommendationInline]
 
 @admin.register(Rating)
