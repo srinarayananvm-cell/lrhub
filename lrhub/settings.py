@@ -110,22 +110,3 @@ CSRF_COOKIE_DOMAIN = None
 # --- Email ---
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # keep simple for now
 PASSWORD_RESET_TIMEOUT = 86400
-import os
-from django.contrib.auth import get_user_model
-
-if os.environ.get("DJANGO_SUPERUSER_USERNAME"):
-    try:
-        User = get_user_model()
-        username = os.environ["DJANGO_SUPERUSER_USERNAME"]
-        email = os.environ["DJANGO_SUPERUSER_EMAIL"]
-        password = os.environ["DJANGO_SUPERUSER_PASSWORD"]
-
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(
-                username=username,
-                email=email,
-                password=password
-            )
-    except Exception as e:
-        # Prevent startup crash if DB isn't ready yet
-        print(f"Superuser creation skipped: {e}")
