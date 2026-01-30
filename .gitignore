@@ -15,7 +15,6 @@ db.sqlite3
 *.log
 
 
-
 # Django fixtures (JSON backups)
 fixtures/*.json
 */fixtures/*.json
