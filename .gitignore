@@ -14,9 +14,7 @@ db.sqlite3
 # Log files
 *.log
 
-# Media uploads
-media/*
-!media/.gitkeep   # keep empty folder tracked if needed
+
 
 # Django fixtures (JSON backups)
 fixtures/*.json
