@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: lrhub
+    env: python
+    disk:
+      name: media
+      mountPath: /opt/render/project/src/media
+      sizeGB: 1
