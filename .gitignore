@@ -1,8 +1,12 @@
 # Virtual environment
 venv/
+.env
 
 # Python cache
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Local SQLite database
 db.sqlite3
@@ -11,13 +15,26 @@ db.sqlite3
 *.log
 
 # Media uploads
-media/*.pdf
-media/avatars/*
-media/notes/*
-media/student_resources/*
+media/*
+!media/.gitkeep   # keep empty folder tracked if needed
 
 # Django fixtures (JSON backups)
 fixtures/*.json
 */fixtures/*.json
-.cache/
 
+# Cache & temporary files
+.cache/
+*.tmp
+*.swp
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node modules (if you add frontend later)
+node_modules/
+
+# Static files (collected)
+staticfiles/
