@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: lrhub
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn lrhub.wsgi
+    envVars:
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: arivuverseceo
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: srinarayananvm@gmail.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        value: arivuverse@2026
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+    autoDeploy: true
+    plan: free
+    releaseCommand: |
+      python manage.py migrate && python manage.py createsuperuser --noinput
