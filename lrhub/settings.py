@@ -102,8 +102,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 
-MEDIA_URL = "/media/"   # URLs will be served via Cloudinary CDN
-
 # --- Redirects ---
 LOGIN_REDIRECT_URL = "/accounts/role-redirect/"
 LOGOUT_REDIRECT_URL = "home"
