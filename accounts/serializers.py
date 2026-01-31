@@ -25,3 +25,22 @@ class SignupSerializer(serializers.ModelSerializer):
         # ✅ Create profile with role
         Profile.objects.create(user=user, role=validated_data['role'])
         return user
+
+from rest_framework import serializers
+from .models import Profile
+
+class ProfileSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(required=False)
+
+    class Meta:
+        model = Profile
+        fields = ['id', 'user', 'role', 'approved', 'avatar', 'bio', 'phone']
+
+    def update(self, instance, validated_data):
+        avatar = validated_data.pop('avatar', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if avatar:
+            instance.avatar = avatar  # ✅ Cloudinary handles storage here
+        instance.save()
+        return instance
