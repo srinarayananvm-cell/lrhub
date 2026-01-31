@@ -45,12 +45,7 @@ def resources_home(request):
     })
 
 
-
 from django.db.models import Avg
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
 from .models import Note, StudentResource
 
 # Build corpus dynamically
@@ -84,6 +79,7 @@ def build_corpus():
         })
 
     return corpus, mapping
+
 
 @api_view(["GET"])
 def search_recommendations(request):
@@ -127,10 +123,11 @@ def search_recommendations(request):
 
     return Response({"query": query, "recommendations": results})
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Note, StudentResource
-from resources.utils import extract_text_from_pdf, summarize_text
+
+from resources.utils import summarize_text
+import requests
+from io import BytesIO
+from PyPDF2 import PdfReader
 
 @api_view(["GET"])
 def summarize_pdf(request, type, pk):
@@ -145,18 +142,20 @@ def summarize_pdf(request, type, pk):
     else:
         return Response({"summary": "Invalid type."})
 
-    text = extract_text_from_pdf(obj.file.path)
+    # ✅ Use Cloudinary URL directly instead of .path
+    response = requests.get(obj.file.url)
+    pdf_file = BytesIO(response.content)
+    reader = PdfReader(pdf_file)
+    text = " ".join(page.extract_text() for page in reader.pages if page.extract_text())
+
     if not text:
         return Response({"summary": "No text extracted from this PDF."})
 
-    # Debug: see how many sentences we actually get
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     if len(sentences) <= 1:
-        # Fallback: trim first 60 words if only one block
         words = text.split()
         summary = " ".join(words[:100]) + "..."
     else:
-        # Use summarizer with compression
         summary = summarize_text(text, num_sentences=5, max_words=100)
 
     return Response({"summary": summary})

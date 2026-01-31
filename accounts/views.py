@@ -377,6 +377,107 @@ def student_dashboard(request):
         'query': query,
         'active_tab': active_tab,
     })
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from analytics.models import ActivityLog
+import requests
+from io import BytesIO
+from PyPDF2 import PdfReader
+
+@login_required
+def download_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+
+    # increment counter
+    note.downloads += 1
+    note.save()
+
+    # log in analytics
+    ActivityLog.objects.create(
+        user=request.user,
+        action="note_download",
+        description=f"Downloaded note: {note.title}"
+    )
+
+    # redirect to Cloudinary URL
+    return redirect(note.file.url)
+
+
+@login_required
+def download_student_resource(request, resource_id):
+    resource = get_object_or_404(StudentResource, id=resource_id)
+
+    # increment counter
+    resource.downloads += 1
+    resource.save()
+
+    # log in analytics
+    ActivityLog.objects.create(
+        user=request.user,
+        action="resource_download",
+        description=f"Downloaded resource: {resource.title}"
+    )
+
+    # redirect to Cloudinary URL
+    return redirect(resource.file.url)
+
+
+def extract_pdf_text_from_url(url):
+    response = requests.get(url)
+    pdf_file = BytesIO(response.content)
+    reader = PdfReader(pdf_file)
+    return " ".join(page.extract_text() for page in reader.pages if page.extract_text())
+
+
+@login_required
+def analyze_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter is required"}, status=400)
+
+    try:
+        text = extract_pdf_text_from_url(note.file.url)
+        relevance = relevance_score(text, query)
+        suggestion = "related" if relevance["score"] >= 20 else "not related"
+
+        return JsonResponse({
+            "type": "Note",
+            "id": note_id,
+            "title": note.title,
+            "relevance_score": relevance["score"],
+            "best_match": relevance["match"],
+            "suggestion": suggestion
+        })
+    except Exception as e:
+        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
+
+
+@login_required
+def analyze_resource(request, resource_id):
+    resource = get_object_or_404(StudentResource, id=resource_id)
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter is required"}, status=400)
+
+    try:
+        text = extract_pdf_text_from_url(resource.file.url)
+        relevance = relevance_score(text, query)
+        suggestion = "related" if relevance["score"] >= 20 else "not related"
+
+        return JsonResponse({
+            "type": "StudentResource",
+            "id": resource_id,
+            "title": resource.title,
+            "relevance_score": relevance["score"],
+            "best_match": relevance["match"],
+            "suggestion": suggestion
+        })
+    except Exception as e:
+        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
+
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.contrib.auth.views import PasswordResetView
@@ -392,89 +493,6 @@ class CustomPasswordResetView(PasswordResetView):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
 
-@login_required
-def download_note(request, note_id):
-    note = get_object_or_404(Note, id=note_id)
-
-    # ✅ increment counter
-    note.downloads += 1
-    note.save()
-
-    # ✅ log in analytics
-    ActivityLog.objects.create(
-        user=request.user,
-        action="note_download",
-        description=f"Downloaded note: {note.title}"
-    )
-
-    # ✅ stream file
-    return FileResponse(note.file.open(), as_attachment=True, filename=note.file.name)
-@login_required
-def download_student_resource(request, resource_id):
-    resource = get_object_or_404(StudentResource, id=resource_id)
-
-    # ✅ increment counter
-    resource.downloads += 1
-    resource.save()
-
-    # ✅ log in analytics
-    ActivityLog.objects.create(
-        user=request.user,
-        action="resource_download",
-        description=f"Downloaded resource: {resource.title}"
-    )
-
-    # ✅ stream file
-    return FileResponse(resource.file.open(), as_attachment=True, filename=resource.file.name)
-# ✅ Analysis views 
-
-@login_required
-def analyze_note(request, note_id):
-    note = get_object_or_404(Note, id=note_id)
-    query = request.GET.get("query", "").strip()
-
-    if not query:
-        return JsonResponse({"error": "Query parameter is required"}, status=400)
-
-    try:
-        text = extract_pdf_text(note.file.path)
-        relevance = relevance_score(text, query)  # dict with score + match
-        suggestion = "related" if relevance["score"] >= 20 else "not related"
-
-        return JsonResponse({
-            "type": "Note",
-            "id": note_id,
-            "title": note.title,
-            "relevance_score": relevance["score"],
-            "best_match": relevance["match"],
-            "suggestion": suggestion
-        })
-    except Exception as e:
-        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
-
-@login_required
-def analyze_resource(request, resource_id):
-    resource = get_object_or_404(StudentResource, id=resource_id)
-    query = request.GET.get("query", "").strip()
-
-    if not query:
-        return JsonResponse({"error": "Query parameter is required"}, status=400)
-
-    try:
-        text = extract_pdf_text(resource.file.path)
-        relevance = relevance_score(text, query)  # dict with score + match
-        suggestion = "related" if relevance["score"] >= 20 else "not related"
-
-        return JsonResponse({
-            "type": "StudentResource",
-            "id": resource_id,
-            "title": resource.title,
-            "relevance_score": relevance["score"],
-            "best_match": relevance["match"],
-            "suggestion": suggestion
-        })
-    except Exception as e:
-        return JsonResponse({"error": f"Analysis failed: {str(e)}"}, status=500)
 
 from rest_framework import generics
 from .serializers import SignupSerializer
