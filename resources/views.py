@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q
+from django.db.models import Q, Avg
 from resources.models import Note, StudentResource
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -7,7 +7,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import re
 from collections import defaultdict
+import requests
+from io import BytesIO
+from PyPDF2 import PdfReader
+from resources.utils import summarize_text
 
+# --- Resources Home ---
 def resources_home(request):
     query = request.GET.get('q')
     filter_type = request.GET.get('filter')
@@ -28,11 +33,9 @@ def resources_home(request):
 
     # ✅ Build categories dictionary
     categories = defaultdict(list)
-
     for n in notes:
         category = n.category or "Uncategorized"
         categories[category].append(n)
-
     for r in resources:
         category = r.category or "Uncategorized"
         categories[category].append(r)
@@ -45,10 +48,7 @@ def resources_home(request):
     })
 
 
-from django.db.models import Avg
-from .models import Note, StudentResource
-
-# Build corpus dynamically
+# --- Corpus Builder ---
 def build_corpus():
     notes = Note.objects.all()
     resources = StudentResource.objects.all()
@@ -81,6 +81,7 @@ def build_corpus():
     return corpus, mapping
 
 
+# --- Search Recommendations ---
 @api_view(["GET"])
 def search_recommendations(request):
     query = request.GET.get("q", "")
@@ -124,11 +125,7 @@ def search_recommendations(request):
     return Response({"query": query, "recommendations": results})
 
 
-from resources.utils import summarize_text
-import requests
-from io import BytesIO
-from PyPDF2 import PdfReader
-
+# --- Summarize PDF ---
 @api_view(["GET"])
 def summarize_pdf(request, type, pk):
     """
@@ -142,7 +139,7 @@ def summarize_pdf(request, type, pk):
     else:
         return Response({"summary": "Invalid type."})
 
-    # ✅ Use Cloudinary URL directly instead of .path
+    # ✅ Use Cloudinary URL directly
     response = requests.get(obj.file.url)
     pdf_file = BytesIO(response.content)
     reader = PdfReader(pdf_file)
