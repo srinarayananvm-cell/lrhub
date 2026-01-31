@@ -31,12 +31,15 @@ INSTALLED_APPS = [
     "resources.apps.ResourcesConfig",
     "collaboration",
     "analytics.apps.AnalyticsConfig",
+    # ✅ Cloudinary apps
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",   # ✅ added for static files
+    "whitenoise.middleware.WhiteNoiseMiddleware",   # ✅ for static files
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -95,9 +98,16 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"   # ✅ for collectstatic
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# --- Media files ---
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# --- Media files (Cloudinary) ---
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
+}
+
+MEDIA_URL = "/media/"   # URLs will be served via Cloudinary CDN
 
 # --- Redirects ---
 LOGIN_REDIRECT_URL = "/accounts/role-redirect/"
