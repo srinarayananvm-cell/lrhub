@@ -5,10 +5,18 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from asgiref.sync import sync_to_async
 
-def extract_pdf_text(file_path_or_obj):
-    """Extract text from a PDF file using pdfplumber."""
+import requests
+from io import BytesIO
+import pdfplumber
+
+def extract_pdf_text_from_url(url: str) -> str:
+    """Extract text from a Cloudinary-hosted PDF using pdfplumber."""
+    response = requests.get(url)
+    if response.status_code != 200:
+        return ""
+    pdf_file = BytesIO(response.content)
     text = ""
-    with pdfplumber.open(file_path_or_obj) as pdf:
+    with pdfplumber.open(pdf_file) as pdf:
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text:

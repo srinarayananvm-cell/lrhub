@@ -10,7 +10,7 @@ from resources.models import Note, StudentResource, Rating, Recommendation
 from resources.forms import NoteForm, StudentResourceForm, RatingForm, RecommendationForm
 from django.http import FileResponse, JsonResponse
 from analytics.models import ActivityLog
-from .utils import extract_pdf_text, relevance_score
+from .utils import extract_pdf_text_from_url, relevance_score
 from django.contrib.auth.decorators import user_passes_test
 import pandas as pd
 # --- Auth Page (combined login/signup tabs) ---
@@ -435,7 +435,7 @@ def analyze_note(request, note_id):
         return JsonResponse({"error": "Query parameter is required"}, status=400)
 
     try:
-        text = extract_pdf_text(note.file.url)
+        text = extract_pdf_text_from_url(note.file.url)
         relevance = relevance_score(text, query)  # dict with score + match
         suggestion = "related" if relevance["score"] >= 20 else "not related"
 
@@ -459,7 +459,7 @@ def analyze_resource(request, resource_id):
         return JsonResponse({"error": "Query parameter is required"}, status=400)
 
     try:
-        text = extract_pdf_text(resource.file.url)
+        text = extract_pdf_text_from_url(resource.file.url)
         relevance = relevance_score(text, query)  # dict with score + match
         suggestion = "related" if relevance["score"] >= 20 else "not related"
 
